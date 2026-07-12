@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+    <meta name="theme-color" content="#ec4899">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Pointage — Famille Patience</title>
+    <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/fp-system.css">
+    <link rel="stylesheet" href="/static/css/fp-responsive.css">
+    <link rel="stylesheet" href="/static/css/pointage/app.css">
+</head>
+<body>
+    <div id="app">
+        <div class="fp-skeleton-wrap">
+            <div class="fp-skeleton-hero">
+                <div class="fp-skeleton fp-skeleton-avatar"></div>
+                <div style="flex:1"><div class="fp-skeleton fp-skeleton-line lg"></div><div class="fp-skeleton fp-skeleton-line sm"></div></div>
+            </div>
+            <div class="fp-skeleton fp-skeleton-card"></div>
+            <div class="fp-skeleton fp-skeleton-card"></div>
+        </div>
+    </div>
+    <script>window.APP_BASE = '/pointage'; window.APP_TYPE = 'pointage';</script>
+    <script type="module" src="/static/js/pointage/app.js"></script>
+</body>
+</html>

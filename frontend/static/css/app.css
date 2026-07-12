@@ -1,0 +1,200 @@
+/* Famille Patience — Styles personnalisés */
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Safe area iPhone / smartphones */
+.safe-area {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+.safe-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Landing portal cards */
+.portal-card {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 1rem;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: all 0.2s;
+    min-height: 72px;
+    -webkit-tap-highlight-color: transparent;
+}
+.portal-card:active {
+    transform: scale(0.98);
+}
+@media (min-width: 375px) {
+    .portal-card { padding: 1.25rem; gap: 1rem; }
+}
+.portal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid #f3f4f6;
+    padding: 1rem;
+}
+@media (min-width: 375px) {
+    .card { padding: 1.25rem; border-radius: 1.25rem; }
+}
+
+.btn-primary {
+    background: #ec4899;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.875rem;
+    transition: all 0.2s;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:hover { background: #db2777; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary {
+    background: white;
+    color: #db2777;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.875rem;
+    border: 1px solid #fbcfe8;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    border: 1px solid #e5e7eb;
+    font-size: 16px; /* évite le zoom iOS */
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 44px;
+}
+.input-field:focus {
+    border-color: #f472b6;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 0.875rem;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+@media (min-width: 375px) {
+    .stat-card { padding: 1.125rem; border-radius: 1.25rem; }
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+}
+.sidebar-link:hover { background: #fdf2f8; color: #db2777; }
+.sidebar-link.active {
+    background: #ec4899;
+    color: white;
+}
+
+/* Mobile drawer */
+.mobile-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+.mobile-drawer.open {
+    pointer-events: auto;
+    opacity: 1;
+}
+.mobile-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+}
+.mobile-drawer-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    background: white;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-drawer.open .mobile-drawer-panel {
+    transform: translateX(0);
+}
+
+/* Main content padding for bottom nav */
+.has-bottom-nav {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+    .has-bottom-nav { padding-bottom: 2rem; }
+}
+
+/* Admin badge */
+.admin-badge {
+    background: #831843;
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* iPhone 6 / petits écrans */
+@media (max-width: 374px) {
+    .stat-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .stat-card .text-2xl { font-size: 1.25rem; }
+}

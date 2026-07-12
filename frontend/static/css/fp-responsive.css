@@ -1,0 +1,146 @@
+/**
+ * Famille Patience — Utilitaires responsive (toutes les apps)
+ */
+
+html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+    min-height: 100dvh;
+}
+
+img, video, svg, canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Conteneurs fluides */
+.fp-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+}
+
+.fp-container-narrow {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+/* Tables scrollables sur mobile */
+.fp-table-scroll,
+.adm-table-wrap,
+.cns-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+/* Grilles adaptatives */
+.fp-grid-auto {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+    .fp-grid-auto { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+    .fp-grid-auto { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+}
+
+/* Texte qui ne déborde pas */
+.fp-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-break-words {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Touch targets minimum */
+button, a, [role="button"], input, select, textarea {
+    min-height: 0; /* reset — les composants fp-btn ont leur propre min-height */
+}
+
+.fp-btn, .mb-btn, .cns-btn, .adm-btn, .fp-input, .mb-input {
+    min-height: var(--fp-touch, 44px);
+}
+
+/* Notifications liste */
+.fp-notif-list { display: flex; flex-direction: column; gap: 8px; }
+.fp-notif-item {
+    padding: 14px 16px;
+    border-radius: var(--fp-radius-sm);
+    border: 1px solid var(--fp-border);
+    background: var(--fp-surface);
+    cursor: pointer;
+    transition: background var(--fp-duration-fast) ease, transform var(--fp-duration-fast) ease;
+}
+.fp-notif-item:active { transform: scale(0.99); background: var(--fp-primary-light); }
+.fp-notif-item.unread {
+    border-left: 3px solid var(--fp-primary);
+    background: linear-gradient(90deg, var(--fp-primary-light) 0%, var(--fp-surface) 40%);
+}
+.fp-notif-item.fp-notif-absence.unread { border-left-color: var(--fp-warning); }
+.fp-notif-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 8px; margin-bottom: 6px;
+}
+.fp-notif-title { font-size: 14px; font-weight: 600; margin: 0; flex: 1; }
+.fp-notif-msg { font-size: 13px; color: var(--fp-text-secondary); margin: 0 0 6px; line-height: 1.45; }
+.fp-notif-time { font-size: 11px; color: var(--fp-text-muted); }
+.fp-notif-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+    background: var(--fp-primary-light); color: var(--fp-primary);
+}
+.fp-notif-absence .fp-notif-badge { background: #fff7ed; color: #d97706; }
+
+/* Petits écrans */
+@media (max-width: 374px) {
+    .mb-content, .cns-content, .adm-content, .ptg-content {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .mb-logo-text { display: none; }
+    .fp-notif-title { font-size: 13px; }
+}
+
+/* Tablettes */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .adm-content, .cns-content { padding: 20px !important; }
+}
+
+/* Desktop large */
+@media (min-width: 1280px) {
+    .cns-content, .adm-content {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+}
+
+/* Modales plein écran sur très petit mobile */
+@media (max-width: 480px) {
+    .adm-modal, .cns-modal {
+        width: calc(100vw - 24px) !important;
+        max-width: none !important;
+        margin: 12px;
+    }
+}
+
+/* Safe areas globales */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .fp-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    .fp-safe-top { padding-top: env(safe-area-inset-top); }
+}

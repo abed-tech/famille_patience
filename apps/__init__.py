@@ -1,0 +1,1 @@
+"""Applications Django — Famille Patience."""
