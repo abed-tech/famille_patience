@@ -17,8 +17,21 @@ def health_check(request):
     except Exception:
         db_ok = False
 
-    status = 200 if db_ok else 503
+    redis_ok = None
+    try:
+        from apps.core.redis_client import redis_health
+
+        redis_ok = redis_health().get("ok")
+    except Exception:
+        redis_ok = False
+
+    healthy = db_ok and (redis_ok is not False)
+    status = 200 if healthy else 503
     return JsonResponse(
-        {"status": "ok" if db_ok else "degraded", "database": db_ok},
+        {
+            "status": "ok" if healthy else "degraded",
+            "database": db_ok,
+            "redis": redis_ok,
+        },
         status=status,
     )

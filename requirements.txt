@@ -12,6 +12,7 @@ psycopg[binary]>=3.2,<4.0
 channels>=4.1,<5.0
 channels-redis>=4.2,<5.0
 redis>=5.0,<6.0
+upstash-redis>=1.2,<2.0
 daphne>=4.1,<5.0
 
 # Tâches asynchrones

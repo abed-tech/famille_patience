@@ -4,6 +4,8 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
+from config.redis_settings import native_redis_url, upstash_rest_configured
+
 DEBUG = False
 
 # --- Clé secrète obligatoire ---
@@ -15,9 +17,9 @@ if SECRET_KEY == _INSECURE_KEY or len(SECRET_KEY) < 50:  # noqa: F405
     )
 
 # --- Cloudinary obligatoire (disque Render éphémère) ---
-if not os.getenv("CLOUDINARY_CLOUD_NAME"):
+if not (os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME")):
     raise ImproperlyConfigured(
-        "CLOUDINARY_CLOUD_NAME est requis en production. "
+        "CLOUDINARY_URL ou CLOUDINARY_CLOUD_NAME est requis en production. "
         "Voir docs/DEPLOIEMENT_RENDER.md"
     )
 
@@ -42,9 +44,10 @@ CSRF_TRUSTED_ORIGINS = [
 if not CSRF_TRUSTED_ORIGINS:
     raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS requis en production.")
 
-if not os.getenv("REDIS_URL"):
+if not upstash_rest_configured() and not native_redis_url():
     raise ImproperlyConfigured(
-        "REDIS_URL est requis en production (Upstash gratuit recommandé)."
+        "Upstash requis en production : définissez UPSTASH_REDIS_REST_URL + "
+        "UPSTASH_REDIS_REST_TOKEN, et idéalement UPSTASH_REDIS_URL (Redis Connect)."
     )
 DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405

@@ -9,6 +9,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
+
+def _cloudinary_configured():
+    """Cloudinary via CLOUDINARY_URL ou variables CLOUDINARY_* séparées."""
+    return bool(os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME"))
+
+
+def _cloudinary_storage_settings():
+    """Construit CLOUDINARY_STORAGE sans secret en dur dans le code."""
+    url = os.getenv("CLOUDINARY_URL", "").strip()
+    if url:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        if parsed.scheme != "cloudinary" or not parsed.hostname:
+            raise ValueError("CLOUDINARY_URL invalide (format attendu : cloudinary://KEY:SECRET@CLOUD_NAME)")
+        return {
+            "CLOUD_NAME": parsed.hostname,
+            "API_KEY": parsed.username or "",
+            "API_SECRET": parsed.password or "",
+        }
+    return {
+        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+        "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
+        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+    }
+
+
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key-change-in-production")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
@@ -38,7 +65,7 @@ THIRD_PARTY_APPS = [
     "auditlog",
 ]
 
-if os.getenv("CLOUDINARY_CLOUD_NAME"):
+if _cloudinary_configured():
     THIRD_PARTY_APPS += ["cloudinary_storage", "cloudinary"]
 
 LOCAL_APPS = [
@@ -112,26 +139,19 @@ else:
         }
     }
 
-# Cache & Channels
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Cache, Channels, Celery, sessions — Upstash / Redis
+from config.redis_settings import apply_redis_settings
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-    }
-}
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL]},
-    }
-}
-
-# Celery
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+_redis_cfg: dict = {}
+apply_redis_settings(_redis_cfg)
+REDIS_URL = _redis_cfg["REDIS_URL"]
+CACHES = _redis_cfg["CACHES"]
+CHANNEL_LAYERS = _redis_cfg["CHANNEL_LAYERS"]
+CELERY_BROKER_URL = _redis_cfg["CELERY_BROKER_URL"]
+CELERY_RESULT_BACKEND = _redis_cfg["CELERY_RESULT_BACKEND"]
+if "SESSION_ENGINE" in _redis_cfg:
+    SESSION_ENGINE = _redis_cfg["SESSION_ENGINE"]
+    SESSION_CACHE_ALIAS = _redis_cfg["SESSION_CACHE_ALIAS"]
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -163,7 +183,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 _DEFAULT_FILE_BACKEND = (
     "cloudinary_storage.storage.MediaCloudinaryStorage"
-    if os.getenv("CLOUDINARY_CLOUD_NAME")
+    if _cloudinary_configured()
     else "django.core.files.storage.FileSystemStorage"
 )
 
@@ -176,12 +196,8 @@ STORAGES = {
     },
 }
 
-if os.getenv("CLOUDINARY_CLOUD_NAME"):
-    CLOUDINARY_STORAGE = {
-        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
-        "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
-        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
-    }
+if _cloudinary_configured():
+    CLOUDINARY_STORAGE = _cloudinary_storage_settings()
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

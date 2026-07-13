@@ -1,6 +1,7 @@
 import os
 
 from .base import *  # noqa: F401, F403
+from config.redis_settings import redis_fully_configured
 
 DEBUG = True
 
@@ -12,8 +13,9 @@ if os.getenv("USE_SQLITE", "false").lower() in ("true", "1", "yes"):
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405
     }
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}  # noqa: F405
-    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}  # noqa: F405
+    if not redis_fully_configured():
+        CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}  # noqa: F405
+        CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}  # noqa: F405
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
