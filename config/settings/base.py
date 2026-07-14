@@ -17,18 +17,28 @@ def _cloudinary_configured():
 
 def _cloudinary_storage_settings():
     """Construit CLOUDINARY_STORAGE sans secret en dur dans le code."""
-    url = os.getenv("CLOUDINARY_URL", "").strip()
+    url = os.getenv("CLOUDINARY_URL", "").strip().strip('"').strip("'")
     if url:
-        from urllib.parse import urlparse
+        from urllib.parse import urlparse, unquote
 
-        parsed = urlparse(url)
-        if parsed.scheme != "cloudinary" or not parsed.hostname:
-            raise ValueError("CLOUDINARY_URL invalide (format attendu : cloudinary://KEY:SECRET@CLOUD_NAME)")
-        return {
-            "CLOUD_NAME": parsed.hostname,
-            "API_KEY": parsed.username or "",
-            "API_SECRET": parsed.password or "",
-        }
+        # Accepter aussi une URL déjà au format Cloudinary sans schéma typé
+        if url.startswith("cloudinary:"):
+            parsed = urlparse(url)
+            cloud_name = (parsed.hostname or "").strip()
+            api_key = unquote(parsed.username or "").strip()
+            api_secret = unquote(parsed.password or "").strip()
+            if cloud_name and api_key and api_secret:
+                return {
+                    "CLOUD_NAME": cloud_name,
+                    "API_KEY": api_key,
+                    "API_SECRET": api_secret,
+                }
+        raise ValueError(
+            "CLOUDINARY_URL invalide. Attendu exactement : "
+            "cloudinary://API_KEY:API_SECRET@CLOUD_NAME "
+            "(sans guillemets, sans https://). "
+            "Sinon utilisez CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET."
+        )
     return {
         "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
         "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),

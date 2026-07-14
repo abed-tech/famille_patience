@@ -42,3 +42,5 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
+      # Alternative si CLOUDINARY_URL pose problème (3 variables séparées) :
+      # CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
