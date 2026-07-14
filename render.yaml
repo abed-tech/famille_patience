@@ -40,7 +40,10 @@ services:
         sync: false
       - key: UPSTASH_REDIS_URL
         sync: false
-      - key: CLOUDINARY_URL
+      - key: CLOUDINARY_CLOUD_NAME
         sync: false
-      # Alternative si CLOUDINARY_URL pose problème (3 variables séparées) :
-      # CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Optionnel : CLOUDINARY_URL (priorité aux 3 variables ci-dessus)

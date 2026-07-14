@@ -11,39 +11,63 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def _cloudinary_configured():
-    """Cloudinary via CLOUDINARY_URL ou variables CLOUDINARY_* séparées."""
-    return bool(os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME"))
+    """Cloudinary via variables séparées ou CLOUDINARY_URL."""
+    if os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET"):
+        return True
+    return bool(os.getenv("CLOUDINARY_URL", "").strip())
+
+
+def _parse_cloudinary_url(url: str) -> dict | None:
+    """Extrait cloud_name / api_key / api_secret depuis CLOUDINARY_URL."""
+    import re
+    from urllib.parse import unquote
+
+    url = url.strip().strip('"').strip("'")
+    # cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    match = re.match(
+        r"^cloudinary://([^:]+):([^@]+)@([^/\s?#]+)",
+        url,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return None
+    return {
+        "CLOUD_NAME": match.group(3).strip(),
+        "API_KEY": unquote(match.group(1).strip()),
+        "API_SECRET": unquote(match.group(2).strip()),
+    }
 
 
 def _cloudinary_storage_settings():
     """Construit CLOUDINARY_STORAGE sans secret en dur dans le code."""
-    url = os.getenv("CLOUDINARY_URL", "").strip().strip('"').strip("'")
-    if url:
-        from urllib.parse import urlparse, unquote
+    # Priorité 1 : variables séparées (plus fiables sur Render)
+    cloud_name = (os.getenv("CLOUDINARY_CLOUD_NAME") or "").strip().strip('"').strip("'")
+    api_key = (os.getenv("CLOUDINARY_API_KEY") or "").strip().strip('"').strip("'")
+    api_secret = (os.getenv("CLOUDINARY_API_SECRET") or "").strip().strip('"').strip("'")
+    if cloud_name and api_key and api_secret:
+        return {
+            "CLOUD_NAME": cloud_name,
+            "API_KEY": api_key,
+            "API_SECRET": api_secret,
+        }
 
-        # Accepter aussi une URL déjà au format Cloudinary sans schéma typé
-        if url.startswith("cloudinary:"):
-            parsed = urlparse(url)
-            cloud_name = (parsed.hostname or "").strip()
-            api_key = unquote(parsed.username or "").strip()
-            api_secret = unquote(parsed.password or "").strip()
-            if cloud_name and api_key and api_secret:
-                return {
-                    "CLOUD_NAME": cloud_name,
-                    "API_KEY": api_key,
-                    "API_SECRET": api_secret,
-                }
+    # Priorité 2 : CLOUDINARY_URL
+    url = (os.getenv("CLOUDINARY_URL") or "").strip()
+    if url:
+        parsed = _parse_cloudinary_url(url)
+        if parsed:
+            return parsed
         raise ValueError(
-            "CLOUDINARY_URL invalide. Attendu exactement : "
-            "cloudinary://API_KEY:API_SECRET@CLOUD_NAME "
-            "(sans guillemets, sans https://). "
-            "Sinon utilisez CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET."
+            "CLOUDINARY_URL invalide. Attendu : cloudinary://API_KEY:API_SECRET@CLOUD_NAME "
+            "(sans guillemets). Plus simple : définissez CLOUDINARY_CLOUD_NAME, "
+            "CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET, puis SUPPRIMEZ CLOUDINARY_URL."
         )
-    return {
-        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
-        "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
-        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
-    }
+
+    raise ValueError(
+        "Cloudinary non configuré. Définissez CLOUDINARY_CLOUD_NAME + "
+        "CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET (recommandé) "
+        "ou CLOUDINARY_URL."
+    )
 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key-change-in-production")
