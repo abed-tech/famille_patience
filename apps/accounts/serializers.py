@@ -7,6 +7,7 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -23,6 +24,18 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("id", "role", "created_at")
+
+    def get_avatar(self, obj):
+        if not obj.avatar:
+            return None
+        try:
+            url = obj.avatar.url
+            request = self.context.get("request")
+            if request and url and not str(url).startswith("http"):
+                return request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

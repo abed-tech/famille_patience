@@ -183,9 +183,7 @@ CACHES = _redis_cfg["CACHES"]
 CHANNEL_LAYERS = _redis_cfg["CHANNEL_LAYERS"]
 CELERY_BROKER_URL = _redis_cfg["CELERY_BROKER_URL"]
 CELERY_RESULT_BACKEND = _redis_cfg["CELERY_RESULT_BACKEND"]
-if "SESSION_ENGINE" in _redis_cfg:
-    SESSION_ENGINE = _redis_cfg["SESSION_ENGINE"]
-    SESSION_CACHE_ALIAS = _redis_cfg["SESSION_CACHE_ALIAS"]
+SESSION_ENGINE = _redis_cfg.get("SESSION_ENGINE", "django.contrib.sessions.backends.db")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

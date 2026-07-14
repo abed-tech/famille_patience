@@ -64,7 +64,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     "Aucun événement ouvert ne vous autorise à pointer pour le moment."
                 )
 
-        data["user"] = UserSerializer(self.user).data
+        data["user"] = UserSerializer(self.user, context=self.context).data
         if app_id:
             data["app"] = app_id
         return data

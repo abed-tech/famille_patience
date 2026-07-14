@@ -148,7 +148,13 @@ body {
     border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 
-.mb-content { padding: 16px; max-width: 480px; margin: 0 auto; }
+.mb-content {
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
 
 /* Cards */
 .mb-card {
@@ -422,7 +428,25 @@ body {
 }
 
 @media (min-width: 768px) {
-    .mb-content { max-width: 520px; padding: 24px; }
+    .mb-content { max-width: 640px; padding: 24px; }
+}
+
+@media (min-width: 1024px) {
+    .mb-content { max-width: 720px; }
+}
+
+/* Formulaires inscription / profil en colonne sur mobile */
+.mb-reg-grid,
+.mb-profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+@media (min-width: 520px) {
+    .mb-reg-grid,
+    .mb-profile-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 /* Pointage agent (membre) */
