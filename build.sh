@@ -12,4 +12,7 @@ python manage.py collectstatic --noinput
 echo "==> Migrations base de données"
 python manage.py migrate --noinput
 
+echo "==> Bootstrap production (admin + données de base)"
+python manage.py bootstrap_prod
+
 echo "==> Build terminé"
