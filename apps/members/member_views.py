@@ -287,6 +287,7 @@ class PublicChurchPoleListView(APIResponseMixin, generics.ListAPIView):
     """Pôles visibles lors de l'inscription (sans authentification)."""
 
     permission_classes = [AllowAny]
+    authentication_classes = []
     queryset = ChurchPole.objects.filter(is_active=True)
     serializer_class = ChurchPoleSerializer
     pagination_class = None
@@ -298,6 +299,7 @@ class PublicChurchPoleListView(APIResponseMixin, generics.ListAPIView):
 
 class PublicChurchDepartmentListView(APIResponseMixin, generics.ListAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     serializer_class = ChurchDepartmentSerializer
     pagination_class = None
 
@@ -315,6 +317,7 @@ class PublicChurchDepartmentListView(APIResponseMixin, generics.ListAPIView):
 
 class PublicFamilyPoleListView(APIResponseMixin, generics.ListAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     queryset = FamilyPole.objects.filter(is_active=True)
     serializer_class = FamilyPoleSerializer
     pagination_class = None
@@ -326,10 +329,28 @@ class PublicFamilyPoleListView(APIResponseMixin, generics.ListAPIView):
 
 class PublicProfessionListView(APIResponseMixin, generics.ListAPIView):
     permission_classes = [AllowAny]
-    queryset = Profession.objects.filter(is_active=True)
+    authentication_classes = []
     serializer_class = ProfessionSerializer
     pagination_class = None
 
+    def get_queryset(self):
+        from django.db import OperationalError, ProgrammingError
+        from .profession_defaults import ensure_default_professions
+
+        try:
+            qs = Profession.objects.filter(is_active=True).order_by("name")
+            if not qs.exists():
+                return ensure_default_professions()
+            return qs
+        except (OperationalError, ProgrammingError):
+            # Table absente (migrations) — liste vide plutôt qu'un 500
+            return Profession.objects.none()
+
     def list(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_queryset(), many=True)
-        return self.success_response(serializer.data)
+        from django.db import OperationalError, ProgrammingError
+
+        try:
+            serializer = self.get_serializer(self.get_queryset(), many=True)
+            return self.success_response(serializer.data)
+        except (OperationalError, ProgrammingError):
+            return self.success_response([])

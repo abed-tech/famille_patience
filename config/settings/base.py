@@ -252,8 +252,8 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
     ),
     "DEFAULT_THROTTLE_CLASSES": (
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "apps.core.throttling.SafeAnonRateThrottle",
+        "apps.core.throttling.SafeUserRateThrottle",
     ),
     "DEFAULT_THROTTLE_RATES": {
         "anon": "120/hour",

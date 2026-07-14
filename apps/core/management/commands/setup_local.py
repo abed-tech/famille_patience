@@ -75,7 +75,7 @@ class Command(BaseCommand):
         for name in family_poles:
             FamilyPole.objects.get_or_create(name=name)
 
-        from apps.members.models import ChurchDepartment, Profession
+        from apps.members.models import ChurchDepartment
 
         departments = [
             "Ministère de l'Évangélisation",
@@ -86,16 +86,8 @@ class Command(BaseCommand):
         for name in departments:
             ChurchDepartment.objects.get_or_create(name=name, pole=church_pole, defaults={"description": name})
 
-        professions = [
-            "Étudiant", "Enseignant", "Médecin", "Infirmier", "Ingénieur", "Comptable",
-            "Avocat", "Commerçant", "Fonctionnaire", "Entrepreneur", "Informaticien",
-            "Architecte", "Artisan", "Agriculteur", "Chauffeur", "Secrétaire",
-            "Journaliste", "Pasteur", "Évangéliste", "Musicien", "Designer",
-            "Électricien", "Plombier", "Mécanicien", "Pharmacien", "Psychologue",
-            "Sans emploi", "Retraité", "Autre",
-        ]
-        for name in professions:
-            Profession.objects.get_or_create(name=name)
+        from apps.members.profession_defaults import ensure_default_professions
+        ensure_default_professions()
 
         if not Member.objects.filter(member_number="FP-DEMO001").exists():
             Member.objects.create(
