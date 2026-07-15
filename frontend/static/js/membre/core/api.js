@@ -21,9 +21,12 @@ export function registerMember(data, photoFile) {
     if (!photoFile) throw new Error('La photo de profil est obligatoire.');
     const fd = new FormData();
     Object.entries(data).forEach(([k, v]) => {
-        if (v !== null && v !== undefined && v !== '') fd.append(k, v);
+        if (v === null || v === undefined || v === '') return;
+        // FormData doit recevoir des chaînes explicites (booléens → "true"/"false")
+        if (typeof v === 'boolean') fd.append(k, v ? 'true' : 'false');
+        else fd.append(k, v);
     });
-    fd.append('photo', photoFile);
+    fd.append('photo', photoFile, photoFile.name || 'photo.jpg');
     return api.requestMultipart('/members/register/', fd);
 }
 
@@ -68,15 +71,21 @@ api.requestMultipart = async function (endpoint, formData, method = 'POST') {
         const details = data.error?.details || data;
         if (details && typeof details === 'object' && !Array.isArray(details)) {
             const parts = Object.entries(details)
-                .filter(([k]) => !['success', 'error', 'message', 'code'].includes(k))
+                .filter(([k]) => !['success', 'error', 'message', 'code', 'detail'].includes(k))
                 .map(([k, v]) => {
-                    const text = Array.isArray(v) ? v[0] : (typeof v === 'object' ? JSON.stringify(v) : v);
+                    let text = v;
+                    if (Array.isArray(v)) text = v[0];
+                    else if (v && typeof v === 'object') {
+                        // DRF parfois nest {field: {detail: "..."}}
+                        text = v.detail || v.message || Object.values(v)[0] || JSON.stringify(v);
+                        if (Array.isArray(text)) text = text[0];
+                    }
                     return `${k}: ${text}`;
                 })
                 .filter(Boolean);
             if (parts.length) msg = parts.slice(0, 4).join(' · ');
         }
-        throw new Error(msg);
+        throw new Error(String(msg || 'Erreur'));
     }
     return data;
 };

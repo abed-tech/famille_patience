@@ -50,6 +50,8 @@ def _cloudinary_storage_settings():
             "CLOUD_NAME": cloud_name,
             "API_KEY": api_key,
             "API_SECRET": api_secret,
+            # Évite le préfixe "/media/" qui peut bloquer certains uploads Cloudinary
+            "PREFIX": "",
         }
 
     # Priorité 2 : CLOUDINARY_URL
@@ -57,7 +59,7 @@ def _cloudinary_storage_settings():
     if url:
         parsed = _parse_cloudinary_url(url)
         if parsed:
-            return parsed
+            return {**parsed, "PREFIX": ""}
         raise ValueError(
             "CLOUDINARY_URL invalide. Attendu : cloudinary://API_KEY:API_SECRET@CLOUD_NAME "
             "(sans guillemets). Plus simple : définissez CLOUDINARY_CLOUD_NAME, "

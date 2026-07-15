@@ -476,13 +476,14 @@ class MemberRegistrationSerializer(serializers.Serializer):
         except Exception as exc:
             logger.exception("Inscription: échec création membre (souvent Cloudinary)")
             msg = str(exc).lower()
+            detail = str(exc).strip()[:180] or type(exc).__name__
             if validated_data.get("photo") is not None or "cloudinary" in msg or "upload" in msg:
                 raise serializers.ValidationError(
                     {
                         "photo": (
-                            "Échec de l'upload de la photo. Vérifiez Cloudinary sur Render "
-                            "(CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
-                            "et supprimez CLOUDINARY_URL si elle est mal formée."
+                            f"Échec upload photo (Cloudinary) : {detail}. "
+                            "Sur Render : CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + "
+                            "CLOUDINARY_API_SECRET ; supprimez CLOUDINARY_URL si malformée."
                         )
                     }
                 ) from exc
