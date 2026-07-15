@@ -278,13 +278,34 @@ class MemberSelfUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         request = self.context.get("request")
-        if validated_data.get("photo"):
+        photo = validated_data.pop("photo", None)
+        if photo:
             from apps.core.security import validate_uploaded_image
-            validate_uploaded_image(validated_data["photo"])
+
+            try:
+                validate_uploaded_image(photo)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError({"photo": list(exc.messages)}) from exc
         profession_ref = validated_data.get("profession_ref")
         if profession_ref:
             validated_data["profession"] = profession_ref.name
         member = super().update(instance, validated_data)
+        if photo:
+            try:
+                from .cloudinary_upload import attach_image_to_field, upload_image_file
+
+                public_id = upload_image_file(photo, folder="members/photos")
+                attach_image_to_field(member, "photo", public_id)
+            except Exception as exc:
+                logger.exception("Profil: échec upload photo Cloudinary")
+                raise serializers.ValidationError(
+                    {
+                        "photo": (
+                            f"Échec upload photo (Cloudinary) : {str(exc)[:180]}. "
+                            "Vérifiez les variables CLOUDINARY_* sur Render."
+                        )
+                    }
+                ) from exc
         MemberHistory.objects.create(
             member=member,
             action_type=MemberHistory.ActionType.UPDATED,
@@ -424,11 +445,13 @@ class MemberRegistrationSerializer(serializers.Serializer):
         validate_complete_member_profile(attrs, require_photo=True, has_photo=has_photo)
         return attrs
 
-    @transaction.atomic
     def create(self, validated_data):
         member_email = validated_data.pop("member_email", "") or ""
         password = validated_data.pop("password")
         validated_data.pop("password_confirm", None)
+        # Photo après commit DB : un échec Cloudinary ne doit plus annuler le compte
+        photo = validated_data.pop("photo", None)
+        self._photo_upload_error = None
 
         # Nettoyage des Optionals null
         for key in (
@@ -450,50 +473,46 @@ class MemberRegistrationSerializer(serializers.Serializer):
                 else:
                     validated_data[key] = None
 
-        user = User.objects.create_user(
-            email=validated_data.pop("email"),
-            password=password,
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-            phone=validated_data["phone_primary"],
-            role=UserRole.MEMBER,
-        )
-
-        if member_email:
-            validated_data["email"] = member_email
-
-        profession_ref = validated_data.get("profession_ref")
-        if profession_ref and not validated_data.get("profession"):
-            validated_data["profession"] = profession_ref.name
-
         try:
-            member = Member.objects.create(user=user, **validated_data)
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    email=validated_data.pop("email"),
+                    password=password,
+                    first_name=validated_data["first_name"],
+                    last_name=validated_data["last_name"],
+                    phone=validated_data["phone_primary"],
+                    role=UserRole.MEMBER,
+                )
+
+                if member_email:
+                    validated_data["email"] = member_email
+
+                profession_ref = validated_data.get("profession_ref")
+                if profession_ref and not validated_data.get("profession"):
+                    validated_data["profession"] = profession_ref.name
+
+                member = Member.objects.create(user=user, **validated_data)
+
+                MemberHistory.objects.create(
+                    member=member,
+                    action_type=MemberHistory.ActionType.CREATED,
+                    description="Auto-inscription via l'application membre",
+                    performed_by=user,
+                )
         except (IntegrityError, DataError) as exc:
             logger.exception("Inscription: erreur base de données")
             raise serializers.ValidationError(
                 {"detail": "Impossible de créer le profil (données invalides ou déjà utilisées)."}
             ) from exc
-        except Exception as exc:
-            logger.exception("Inscription: échec création membre (souvent Cloudinary)")
-            msg = str(exc).lower()
-            detail = str(exc).strip()[:180] or type(exc).__name__
-            if validated_data.get("photo") is not None or "cloudinary" in msg or "upload" in msg:
-                raise serializers.ValidationError(
-                    {
-                        "photo": (
-                            f"Échec upload photo (Cloudinary) : {detail}. "
-                            "Sur Render : CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + "
-                            "CLOUDINARY_API_SECRET ; supprimez CLOUDINARY_URL si malformée."
-                        )
-                    }
-                ) from exc
-            raise
 
-        MemberHistory.objects.create(
-            member=member,
-            action_type=MemberHistory.ActionType.CREATED,
-            description="Auto-inscription via l'application membre",
-            performed_by=user,
-        )
+        if photo:
+            try:
+                from .cloudinary_upload import attach_image_to_field, upload_image_file
+
+                public_id = upload_image_file(photo, folder="members/photos")
+                attach_image_to_field(member, "photo", public_id)
+            except Exception as exc:
+                logger.exception("Inscription: compte OK mais photo Cloudinary échouée")
+                self._photo_upload_error = str(exc).strip()[:180] or type(exc).__name__
 
         return member

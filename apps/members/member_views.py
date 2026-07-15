@@ -42,10 +42,16 @@ class MemberRegistrationView(APIResponseMixin, generics.CreateAPIView):
                 "first_name": member.first_name,
                 "last_name": member.last_name,
             }
-        return self.created_response(
-            payload,
-            "Inscription réussie. Vous pouvez vous connecter.",
-        )
+        photo_err = getattr(serializer, "_photo_upload_error", None)
+        if photo_err:
+            payload["photo_upload_error"] = photo_err
+            message = (
+                "Compte créé, mais la photo n'a pas pu être enregistrée. "
+                "Connectez-vous puis ajoutez-la depuis votre profil."
+            )
+        else:
+            message = "Inscription réussie. Vous pouvez vous connecter."
+        return self.created_response(payload, message)
 
 
 class MyProfileView(APIResponseMixin, generics.RetrieveUpdateAPIView):

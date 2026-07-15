@@ -11,6 +11,7 @@ import {
     bindFamilyConditionals,
     renderRegistrationStepHtml,
     bindPhotoUpload,
+    esc,
 } from '../../shared/member-registration.js';
 
 const data = {};
@@ -75,13 +76,17 @@ export function renderRegister(router, step = 0) {
             return;
         }
         try {
-            await registerMember(buildRegistrationPayload(data), photoFile);
+            const res = await registerMember(buildRegistrationPayload(data), photoFile);
+            const photoWarn = res?.data?.photo_upload_error;
+            const subtitle = photoWarn
+                ? "Compte créé. La photo n'a pas pu être enregistrée — ajoutez-la depuis votre profil après connexion."
+                : (res?.message || 'Votre carte et QR Code sont prêts. Connectez-vous pour y accéder.');
             renderAuthPage(`
                 ${authBrand('Bienvenue !')}
                 <div class="mb-card" style="text-align:center;padding:28px 20px">
                     <div style="font-size:48px;margin-bottom:12px">🎉</div>
                     <h2 style="font-size:18px;font-weight:700;margin:0 0 8px">Inscription réussie</h2>
-                    <p style="font-size:13px;color:var(--mb-text-muted);margin:0 0 20px">Votre carte et QR Code sont prêts. Connectez-vous pour y accéder.</p>
+                    <p style="font-size:13px;color:var(--mb-text-muted);margin:0 0 20px">${esc(subtitle)}</p>
                     <button class="mb-btn mb-btn-primary" id="go-login">Se connecter</button>
                 </div>
             `);
