@@ -1,9 +1,11 @@
-const CACHE_NAME = 'famille-patience-v7';
+const CACHE_NAME = 'famille-patience-v8';
 const STATIC_ASSETS = [
     '/static/css/fp-system.css',
     '/static/css/fp-responsive.css',
+    '/static/css/landing.css',
     '/static/manifest.json',
     '/static/icons/icon.svg',
+    '/static/icons/icon-192.png',
 ];
 
 self.addEventListener('install', (event) => {

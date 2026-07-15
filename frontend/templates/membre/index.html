@@ -1,16 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ec4899">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="description" content="Espace membre — Famille Patience">
-    <title>Famille Patience</title>
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
+    {% include "includes/seo_head.html" %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/fp-system.css">
@@ -29,6 +20,12 @@
             <div class="fp-skeleton fp-skeleton-card"></div>
             <div class="fp-skeleton fp-skeleton-card"></div>
         </div>
+        <noscript>
+            <main style="padding:1.5rem;font-family:system-ui,sans-serif;max-width:28rem;margin:auto">
+                <h1>Espace membre — Famille Patience</h1>
+                <p>Activez JavaScript pour utiliser la plateforme, ou revenez à la <a href="/">page d'accueil</a>.</p>
+            </main>
+        </noscript>
     </div>
     <script>window.APP_BASE = '/membre'; window.APP_TYPE = 'membre';</script>
     <script src="/static/js/shared/sw-register.js"></script>

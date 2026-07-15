@@ -1,87 +1,72 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#ec4899">
-    <meta name="description" content="Plateforme Famille Patience — Gestion de famille d'église">
-    <title>Famille Patience</title>
-    <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#fdf2f8', 100: '#fce7f3', 200: '#fbcfe8',
-                            300: '#f9a8d4', 400: '#f472b6', 500: '#ec4899',
-                            600: '#db2777', 700: '#be185d',
-                        }
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    screens: { xs: '320px' },
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css">
+    {% include "includes/seo_head.html" %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/fp-system.css">
+    <link rel="stylesheet" href="/static/css/fp-responsive.css">
+    <link rel="stylesheet" href="/static/css/landing.css">
 </head>
-<body class="bg-gradient-to-br from-primary-50 via-white to-primary-100 font-sans antialiased min-h-screen safe-area">
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="px-4 xs:px-5 py-4 safe-top">
-            <div class="max-w-lg mx-auto flex items-center gap-3">
-                <div class="w-11 h-11 bg-primary-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
-                    <span class="text-white font-bold text-lg">FP</span>
-                </div>
-                <div>
-                    <h1 class="font-bold text-gray-900 text-base xs:text-lg leading-tight">Famille Patience</h1>
-                    <p class="text-xs text-gray-500">Plateforme de gestion</p>
-                </div>
+<body class="fp-landing">
+    <header class="fp-landing__header">
+        <div class="fp-landing__brand">
+            <img src="/static/icons/icon-192.png" width="48" height="48" alt="Logo Famille Patience" class="fp-landing__logo">
+            <div>
+                <p class="fp-landing__brand-name">Famille Patience</p>
+                <p class="fp-landing__brand-tag">Plateforme de la famille d'église</p>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <!-- Hero -->
-        <main class="flex-1 px-4 xs:px-5 pb-8 safe-bottom">
-            <div class="max-w-lg mx-auto">
-                <div class="text-center mt-4 mb-8 fade-in">
-                    <h2 class="text-xl xs:text-2xl font-bold text-gray-900 mb-2">Bienvenue</h2>
-                    <p class="text-sm text-gray-500 leading-relaxed">Choisissez votre espace pour accéder à la plateforme.</p>
-                </div>
-
-                <div class="space-y-4 fade-in">
-                    <!-- Portail membres -->
-                    <a href="/portail/" class="portal-card group">
-                        <div class="portal-icon bg-primary-100 text-primary-600 group-hover:bg-primary-500 group-hover:text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-gray-900 text-sm xs:text-base">Portail Membres</h3>
-                            <p class="text-xs text-gray-500 mt-0.5 leading-snug">Membres, référents, conseillers et agents de pointage</p>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-300 group-hover:text-primary-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
-
-                    <!-- Espace admin -->
-                    <a href="/gestion/" class="portal-card group border-primary-200 bg-primary-50/50">
-                        <div class="portal-icon bg-primary-500 text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-gray-900 text-sm xs:text-base">Espace Administration</h3>
-                            <p class="text-xs text-gray-500 mt-0.5 leading-snug">Réservé aux administrateurs — gestion complète</p>
-                        </div>
-                        <svg class="w-5 h-5 text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </div>
-
-                <p class="text-center text-xs text-gray-400 mt-8">
-                    Backend technique : <a href="/admin/" class="text-primary-500 underline">/admin/</a>
-                </p>
+    <main class="fp-landing__main">
+        <section class="fp-landing__hero" aria-labelledby="hero-title">
+            <h1 id="hero-title">Famille Patience</h1>
+            <p class="fp-landing__lead">
+                Inscrivez-vous, consultez votre carte membre et vos événements,
+                où que vous soyez — téléphone, tablette ou ordinateur.
+            </p>
+            <div class="fp-landing__cta">
+                <a class="fp-landing__btn fp-landing__btn--primary" href="/membre/inscription">Créer mon compte</a>
+                <a class="fp-landing__btn fp-landing__btn--ghost" href="/membre/connexion">Se connecter</a>
             </div>
-        </main>
-    </div>
+        </section>
+
+        <section class="fp-landing__features" aria-labelledby="features-title">
+            <h2 id="features-title">Une plateforme pour toute la famille</h2>
+            <ul>
+                <li>
+                    <strong>Espace membre</strong>
+                    <span>Profil, carte, QR code et notifications sur mobile comme sur desktop.</span>
+                </li>
+                <li>
+                    <strong>Événements & présence</strong>
+                    <span>Suivez les activités et le pointage autorisé selon votre rôle.</span>
+                </li>
+                <li>
+                    <strong>Encadrement</strong>
+                    <span>Référents et conseillers accompagnent les membres depuis le même espace.</span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="fp-landing__devices" aria-labelledby="devices-title">
+            <h2 id="devices-title">Compatible avec votre appareil</h2>
+            <p>
+                Interface adaptative pour Chrome, Safari, Firefox, Edge — iOS, Android,
+                Windows et macOS. Ajoutez l'application à l'écran d'accueil pour un accès rapide.
+            </p>
+            <a class="fp-landing__btn fp-landing__btn--primary" href="/membre/">Ouvrir l'espace membre</a>
+        </section>
+    </main>
+
+    <footer class="fp-landing__footer">
+        <p>&copy; {% now "Y" %} Famille Patience — Tous droits réservés.</p>
+        <nav aria-label="Liens utiles">
+            <a href="/membre/inscription">Inscription</a>
+            <a href="/membre/connexion">Connexion</a>
+            <a href="/sitemap.xml">Plan du site</a>
+        </nav>
+    </footer>
 </body>
 </html>

@@ -1,0 +1,188 @@
+/* Landing publique — SEO + adaptatif multi-appareils */
+.fp-landing {
+    --fp-landing-bg: #faf7f5;
+    --fp-landing-ink: #1c1410;
+    --fp-landing-muted: #6b5a52;
+    --fp-landing-accent: #c02670;
+    --fp-landing-accent-soft: #fce7f3;
+    min-height: 100dvh;
+    margin: 0;
+    color: var(--fp-landing-ink);
+    background:
+        radial-gradient(120% 80% at 10% -10%, #fce7f3 0%, transparent 55%),
+        radial-gradient(90% 60% at 100% 0%, #ffe4e6 0%, transparent 50%),
+        var(--fp-landing-bg);
+    font-family: "DM Sans", "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+.fp-landing__header,
+.fp-landing__main,
+.fp-landing__footer {
+    width: min(40rem, calc(100% - 2rem));
+    margin-inline: auto;
+}
+
+.fp-landing__header {
+    display: flex;
+    align-items: center;
+    padding: max(1rem, env(safe-area-inset-top)) 0 0.5rem;
+}
+
+.fp-landing__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fp-landing__logo {
+    border-radius: 0.9rem;
+    box-shadow: 0 8px 24px rgba(192, 38, 112, 0.22);
+}
+
+.fp-landing__brand-name {
+    margin: 0;
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.fp-landing__brand-tag {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    color: var(--fp-landing-muted);
+}
+
+.fp-landing__hero {
+    padding: 2.25rem 0 1.5rem;
+}
+
+.fp-landing__hero h1 {
+    margin: 0 0 0.75rem;
+    font-family: Fraunces, Georgia, serif;
+    font-size: clamp(2rem, 6vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.fp-landing__lead {
+    margin: 0 0 1.5rem;
+    max-width: 34ch;
+    font-size: 1.05rem;
+    color: var(--fp-landing-muted);
+}
+
+.fp-landing__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.fp-landing__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.85rem;
+    padding: 0.7rem 1.15rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.fp-landing__btn:active {
+    transform: scale(0.98);
+}
+
+.fp-landing__btn--primary {
+    background: var(--fp-landing-accent);
+    color: #fff;
+}
+
+.fp-landing__btn--ghost {
+    background: #fff;
+    color: var(--fp-landing-ink);
+    border: 1px solid rgba(28, 20, 16, 0.12);
+}
+
+.fp-landing__features,
+.fp-landing__devices {
+    padding: 1.25rem 0 0.5rem;
+}
+
+.fp-landing__features h2,
+.fp-landing__devices h2 {
+    margin: 0 0 1rem;
+    font-family: Fraunces, Georgia, serif;
+    font-size: 1.35rem;
+}
+
+.fp-landing__features ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.fp-landing__features li {
+    padding: 1rem 1.1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(28, 20, 16, 0.06);
+}
+
+.fp-landing__features strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.fp-landing__features span,
+.fp-landing__devices p {
+    color: var(--fp-landing-muted);
+    font-size: 0.95rem;
+}
+
+.fp-landing__devices {
+    padding-bottom: 2rem;
+}
+
+.fp-landing__devices .fp-landing__btn {
+    margin-top: 1rem;
+}
+
+.fp-landing__footer {
+    padding: 1.25rem 0 max(1.5rem, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(28, 20, 16, 0.08);
+    font-size: 0.8rem;
+    color: var(--fp-landing-muted);
+}
+
+.fp-landing__footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.fp-landing__footer a {
+    color: var(--fp-landing-accent);
+    text-decoration: none;
+}
+
+@media (min-width: 768px) {
+    .fp-landing__features ul {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .fp-landing__hero {
+        padding-top: 3.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-landing__btn {
+        transition: none;
+    }
+}

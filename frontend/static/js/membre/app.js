@@ -5,6 +5,32 @@ import { normalizeAppPath, ensureAppBase } from '../shared/router.js';
 
 const BASE = '/membre';
 
+const PAGE_TITLES = {
+    '/': 'Famille Patience',
+    '/connexion': 'Connexion',
+    '/inscription': 'Inscription',
+    '/accueil': 'Accueil',
+    '/profil': 'Profil',
+    '/carte': 'Ma carte',
+    '/qr-code': 'QR Code',
+    '/evenements': 'Événements',
+    '/historique': 'Historique',
+    '/notifications': 'Notifications',
+    '/parametres': 'Paramètres',
+    '/encadrement': 'Encadrement',
+    '/mes-membres': 'Mes membres',
+    '/mes-referents': 'Mes référents',
+    '/mon-referent': 'Mon référent',
+    '/mon-conseiller': 'Mon conseiller',
+    '/pointage': 'Pointage',
+};
+
+function setDocumentTitle(path) {
+    const key = Object.keys(PAGE_TITLES).find((p) => path === p || path.startsWith(`${p}/`));
+    const label = (key && PAGE_TITLES[key]) || 'Espace membre';
+    document.title = `${label} — Famille Patience`;
+}
+
 const PAGES = {
     '/connexion': () => import('./pages/login.js').then(m => m.renderLogin),
     '/inscription': () => import('./pages/register.js').then(m => m.renderRegister),
@@ -67,6 +93,7 @@ class Router {
         if (path.startsWith('/evenements-agent')) {
             path = path.replace('/evenements-agent', '/evenements');
         }
+        setDocumentTitle(path);
         if (path === '/') { this.handleRoot(); return; }
 
         const memberMatch = path.match(/^\/mes-membres\/([^/]+)$/);

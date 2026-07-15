@@ -5,6 +5,28 @@ import { normalizeAppPath, ensureAppBase } from '../shared/router.js';
 
 const BASE = '/gestion';
 
+function setDocumentTitle(path) {
+    const map = {
+        '/connexion': 'Connexion',
+        '/dashboard': 'Tableau de bord',
+        '/membres': 'Membres',
+        '/referents': 'Référents',
+        '/conseillers': 'Conseillers',
+        '/evenements': 'Événements',
+        '/pointage': 'Pointage',
+        '/statistiques': 'Statistiques',
+        '/poles': 'Pôles',
+        '/departements': 'Départements',
+        '/professions': 'Professions',
+        '/notifications': 'Notifications',
+        '/rapports': 'Rapports',
+        '/journal': 'Journal',
+        '/parametres': 'Paramètres',
+    };
+    const key = Object.keys(map).find((p) => path === p || path.startsWith(`${p}/`));
+    document.title = `${(key && map[key]) || 'Administration'} — Famille Patience`;
+}
+
 const PAGES = {
     '/dashboard': () => import('./pages/dashboard.js').then(m => m.renderDashboard),
     '/membres': () => import('./pages/members.js').then(m => m.renderMembers),
@@ -46,6 +68,7 @@ class Router {
         stopPointagePolling();
         destroyCharts();
         let path = normalizeAppPath(location.pathname, BASE);
+        setDocumentTitle(path);
         if (path === '/') { this.handleRoot(); return; }
         if (path === '/connexion') { renderLogin(); return; }
 
