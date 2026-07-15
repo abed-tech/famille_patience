@@ -12,7 +12,9 @@ export function toastError(msg) {
 
 export function avatarHtml(name, photoUrl, size = 44) {
     const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    if (photoUrl) return `<div class="mb-avatar" style="width:${size}px;height:${size}px"><img src="${photoUrl}" alt=""></div>`;
+    if (photoUrl) {
+        return `<div class="mb-avatar" style="width:${size}px;height:${size}px"><img src="${photoUrl}" alt="" loading="lazy" decoding="async"></div>`;
+    }
     return `<div class="mb-avatar" style="width:${size}px;height:${size}px">${initials}</div>`;
 }
 

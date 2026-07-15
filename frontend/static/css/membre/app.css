@@ -89,15 +89,14 @@ body {
 
 .mb-header-ig {
     position: sticky; top: 0; z-index: 30;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* Opaque = scroll 60fps (blur sticky = jank + 2 doigts parfois) */
+    background: #ffffff;
     border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
     padding: 0 12px;
     padding-top: max(0px, env(safe-area-inset-top));
     min-height: calc(48px + max(0px, env(safe-area-inset-top)));
     display: flex; align-items: center;
-    transform: translate3d(0, 0, 0);
+    touch-action: manipulation;
 }
 
 .mb-header-logo {
@@ -127,11 +126,11 @@ body {
 
 .mb-header {
     position: sticky; top: 0; z-index: 30;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(12px);
+    background: #ffffff;
     border-bottom: 1px solid var(--mb-border);
     padding: 12px 16px max(12px, env(safe-area-inset-top));
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    touch-action: manipulation;
 }
 .mb-header-profile { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .mb-avatar {
@@ -268,7 +267,14 @@ body {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .mb-drawer-user span { font-size: 12px; color: var(--mb-text-muted); }
-.mb-drawer-nav { flex: 1; padding: 8px 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.mb-drawer-nav {
+    flex: 1;
+    padding: 8px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
 .mb-drawer-link {
     display: flex; align-items: center; gap: 14px; padding: 12px 14px;
     border-radius: 14px; text-decoration: none; color: var(--mb-text);

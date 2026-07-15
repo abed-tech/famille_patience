@@ -55,13 +55,15 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior-y: contain;
 }
 
-/* Bloque le scroll document pendant drawer / sidebar */
+/*
+ * Lock drawer : overflow seulement — JAMAIS touch-action:none
+ * (sinon iOS exige souvent 2 doigts même après déblocage).
+ */
+html.fp-scroll-lock,
 body.fp-scroll-lock {
-    overflow: hidden;
-    touch-action: none;
+    overflow: hidden !important;
     overscroll-behavior: none;
 }
 
@@ -74,23 +76,19 @@ body.fp-scroll-lock {
     pointer-events: none;
 }
 @keyframes fpPageEnter {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
+    /* Opacity only — transform sur le contenu scrollable = jank mobile */
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 @keyframes fpPageLeave {
-    from { opacity: 1; transform: none; }
-    to { opacity: 0; transform: translateY(-2px); }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 .fp-content-leave {
     opacity: 0.55;
     transition: opacity 60ms linear;
     pointer-events: none;
     will-change: opacity;
-}
-
-.mb-content, .cns-content, .adm-content, .ptg-content {
-    /* pas de content-visibility: évite les sauts de scroll SPA */
-    contain: layout style;
 }
 
 .fp-skeleton-inline {
@@ -391,13 +389,12 @@ body.fp-scroll-lock {
     justify-content: space-around;
     height: var(--fp-bottom-nav-total);
     padding-bottom: var(--fp-safe-b);
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* Fond opaque : blur sticky tue le scroll 60fps sur mobile */
+    background: #ffffff;
     border-top: 1px solid var(--fp-border);
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
-    /* Isole le paint du scroll de page */
-    transform: translate3d(0, 0, 0);
+    /* Ne jamais capturer les gestes de pan de la page */
+    touch-action: manipulation;
 }
 
 .fp-bottom-nav-item {
@@ -455,9 +452,11 @@ body.fp-scroll-lock {
 
 @media (min-width: 768px) {
     .fp-bottom-nav {
+        left: 0;
+        right: 0;
+        width: 100%;
         max-width: 520px;
-        left: 50%;
-        transform: translate3d(-50%, 0, 0);
+        margin-inline: auto;
         border-radius: 20px 20px 0 0;
         border-left: 1px solid var(--fp-border);
         border-right: 1px solid var(--fp-border);

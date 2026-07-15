@@ -63,13 +63,11 @@ body {
 .adm-main { flex: 1; margin-left: var(--adm-sidebar-w); min-width: 0; display: flex; flex-direction: column; }
 .adm-topbar {
     position: sticky; top: 0; z-index: 30; height: var(--adm-topbar-h);
-    background: rgba(255,255,255,.94);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: #ffffff;
     border-bottom: 1px solid var(--adm-border-light);
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px; gap: 16px;
-    transform: translate3d(0, 0, 0);
+    touch-action: manipulation;
 }
 .adm-content { flex: 1; padding: 24px; max-width: 1440px; }
 

@@ -1,6 +1,7 @@
 import { icons, NAV_ITEMS, PAGE_TITLES } from './icons.js';
 import { api } from './api.js';
 import { swapContent, scrollToTopInstant } from '../../shared/shell.js';
+import { unlockNativeScroll } from '../../shared/native-scroll.js';
 import {
     bottomNavHtml, bindBottomNav, refreshBottomNav, ADMIN_BOTTOM_NAV,
 } from '../../shared/bottom-nav.js';
@@ -122,7 +123,8 @@ function setAdmSidebarOpen(open) {
     const overlay = document.getElementById('sidebar-overlay');
     sidebar?.classList.toggle('open', open);
     overlay?.classList.toggle('hidden', !open);
-    document.body.classList.toggle('fp-scroll-lock', open);
+    if (open) document.body.classList.add('fp-scroll-lock');
+    else unlockNativeScroll();
 }
 
 function bindShellEvents(options = {}) {

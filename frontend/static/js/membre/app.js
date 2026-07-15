@@ -2,6 +2,7 @@ import { api, setAgentFromDashboard } from './core/api.js';
 import { bindMembreNavigation } from './core/navigation.js';
 import { preparePageLeave, showContentSkeleton, mountError } from '../shared/ui.js';
 import { normalizeAppPath, ensureAppBase } from '../shared/router.js';
+import { unlockNativeScroll } from '../shared/native-scroll.js';
 
 const BASE = '/membre';
 
@@ -126,6 +127,7 @@ class Router {
         if (current.match(/^\/evenements\/[0-9a-f-]+$/) && !path.match(/^\/evenements\/[0-9a-f-]+$/)) {
             import('./pages/events.js').then(m => m.stopDetailPolling?.()).catch(() => {});
         }
+        unlockNativeScroll();
         preparePageLeave().then(() => {
             history.pushState({}, '', `${BASE}${path}`);
             this.resolve();
@@ -187,6 +189,7 @@ class Router {
 
 export const router = new Router();
 document.addEventListener('DOMContentLoaded', () => {
+    unlockNativeScroll();
     bindMembreNavigation(router);
     router.resolve();
 });

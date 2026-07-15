@@ -3,20 +3,33 @@
  * Mobile-first : téléphone → tablette → desktop
  */
 
-/* ─── Fondations ─── */
+/*
+ * ─── Fondations scroll (CRITIQUE iOS/Android) ───
+ * NE PAS mettre overflow-x:hidden sur html ET body :
+ * ça force souvent un scroll à DEUX doigts sur Safari/Chrome mobile.
+ * Le document (html/body) doit rester le scroller natif principal.
+ */
 html {
-    overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
     width: 100%;
+    height: 100%;
+    /* scroll vertical natif uniquement — inertie navigateur */
+    overflow-y: auto;
+    overflow-x: clip;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 body {
-    overflow-x: hidden;
+    min-height: 100%;
     min-height: 100dvh;
-    /* Scroll tactile fluide (iOS / Android) */
-    -webkit-overflow-scrolling: touch;
     width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
+    margin: 0;
+    /* PAS d'overflow ici : le scroll vit sur html (scrollingElement) */
+    overflow: visible;
+    /* 1 doigt = pan vertical (+ pinch zoom navigateur autorisé) */
+    touch-action: pan-x pan-y pinch-zoom;
 }
 
 img, video, svg, canvas, iframe {
@@ -28,17 +41,24 @@ table {
     max-width: 100%;
 }
 
-/* Empêche le overflow horizontal des blocs flex/grid */
+/* Conteneurs app : PAS de scroller nesté vertical */
 .mb-app, .adm-app, .cns-app, .ptg-app, #app {
     width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
     overflow-x: clip;
+    overflow-y: visible;
+    touch-action: pan-y pinch-zoom;
 }
 
 .mb-content, .cns-content, .adm-content, .ptg-content {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    overflow-x: clip;
+    overflow-y: visible;
+    touch-action: pan-y pinch-zoom;
+    /* laisse le navigateur gérer l'inertie */
+    -webkit-overflow-scrolling: auto;
 }
 
 /* Conteneurs fluides */
@@ -417,7 +437,7 @@ input, select, textarea, button {
 /* Auth pages */
 .mb-auth, .adm-login {
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 .mb-auth-card, .adm-login-form {

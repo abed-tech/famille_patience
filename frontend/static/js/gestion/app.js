@@ -2,6 +2,7 @@ import { api } from './core/api.js';
 import { destroyCharts } from './core/components.js';
 import { preparePageLeave, showContentSkeleton, mountError } from '../shared/ui.js';
 import { normalizeAppPath, ensureAppBase } from '../shared/router.js';
+import { unlockNativeScroll } from '../shared/native-scroll.js';
 
 const BASE = '/gestion';
 
@@ -125,6 +126,7 @@ class Router {
     }
 
     navigate(path) {
+        unlockNativeScroll();
         preparePageLeave().then(() => {
             history.pushState({}, '', `${BASE}${path}`);
             this.resolve();
@@ -195,4 +197,7 @@ function renderLogin() {
 
 export { stopPointagePolling };
 
-document.addEventListener('DOMContentLoaded', () => router.resolve());
+document.addEventListener('DOMContentLoaded', () => {
+    unlockNativeScroll();
+    router.resolve();
+});

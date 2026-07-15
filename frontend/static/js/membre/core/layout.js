@@ -2,6 +2,7 @@ import { api, isReferrer, isCounsellor, hasAgentAccess } from './api.js';
 import { avatarHtml } from './components.js';
 import { icons, navIcon } from './icons.js';
 import { swapContent, scrollToTopInstant } from '../../shared/shell.js';
+import { unlockNativeScroll } from '../../shared/native-scroll.js';
 import {
     bottomNavHtml, bindBottomNav, refreshBottomNav,
     MEMBER_BOTTOM_NAV, REFERRER_BOTTOM_NAV, COUNSELLOR_MEMBER_BOTTOM_NAV,
@@ -137,13 +138,17 @@ function updateHeader(title, subtitle, needsBack, onBack) {
 function setDrawerOpen(open) {
     document.getElementById('mb-drawer-overlay')?.classList.toggle('open', open);
     document.getElementById('mb-drawer')?.classList.toggle('open', open);
-    document.body.classList.toggle('fp-scroll-lock', open);
     if (open) {
         document.body.dataset.fpScrollY = String(window.scrollY || 0);
-    } else if (document.body.dataset.fpScrollY != null) {
-        const y = Number(document.body.dataset.fpScrollY) || 0;
-        delete document.body.dataset.fpScrollY;
-        requestAnimationFrame(() => window.scrollTo(0, y));
+        document.documentElement.classList.add('fp-scroll-lock');
+        document.body.classList.add('fp-scroll-lock');
+    } else {
+        unlockNativeScroll();
+        if (document.body.dataset.fpScrollY != null) {
+            const y = Number(document.body.dataset.fpScrollY) || 0;
+            delete document.body.dataset.fpScrollY;
+            requestAnimationFrame(() => window.scrollTo(0, y));
+        }
     }
 }
 
@@ -239,7 +244,11 @@ function bindNav(router, onBack) {
     document.getElementById('mb-drawer-close')?.addEventListener('click', close);
     document.getElementById('mb-drawer-overlay')?.addEventListener('click', close);
 
-    const go = (path) => { close(); router.navigate(path); };
+    const go = (path) => {
+        close();
+        unlockNativeScroll();
+        router.navigate(path);
+    };
 
     document.querySelectorAll('[data-drawer-nav]').forEach(l => {
         l.addEventListener('click', e => {

@@ -1,38 +1,31 @@
 /** Mise à jour rapide du contenu sans reconstruire le shell */
 
+import { onPageScrollReady } from './native-scroll.js';
+
 /** Remonte la page sans animation (fluide, prévisible, iOS-safe). */
 export function scrollToTopInstant() {
-    const roots = [
-        document.scrollingElement,
-        document.documentElement,
-        document.body,
-        document.querySelector('.mb-content'),
-        document.querySelector('.adm-content'),
-        document.querySelector('.adm-main'),
-    ].filter(Boolean);
-
-    const prev = document.documentElement.style.scrollBehavior;
-    document.documentElement.style.scrollBehavior = 'auto';
-    roots.forEach((el) => {
-        try {
-            if (typeof el.scrollTo === 'function') el.scrollTo(0, 0);
-            else el.scrollTop = 0;
-        } catch { /* ignore */ }
-    });
+    onPageScrollReady();
+    // Ne scroller QUE le document — pas les sous-conteneurs (évite conflits tactiles)
+    const root = document.scrollingElement || document.documentElement;
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    root.scrollTop = 0;
+    document.body.scrollTop = 0;
     window.scrollTo(0, 0);
-    document.documentElement.style.scrollBehavior = prev;
+    root.style.scrollBehavior = prev;
 }
 
 export function swapContent(selector, html) {
     const el = document.querySelector(selector);
     if (!el) return false;
     el.classList.remove('fp-page-enter', 'fp-page-leave', 'fp-content-leave');
+    onPageScrollReady();
     el.innerHTML = html;
     scrollToTopInstant();
-    // Une seule frame : évite le layout thrash du double rAF
-    requestAnimationFrame(() => {
-        el.classList.add('fp-page-enter');
-    });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) {
+        requestAnimationFrame(() => el.classList.add('fp-page-enter'));
+    }
     return true;
 }
 
