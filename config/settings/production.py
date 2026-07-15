@@ -1,4 +1,5 @@
 from .base import *  # noqa: F401, F403
+from .base import _cloudinary_configured
 
 import os
 
@@ -17,7 +18,7 @@ if SECRET_KEY == _INSECURE_KEY or len(SECRET_KEY) < 50:  # noqa: F405
     )
 
 # --- Cloudinary obligatoire (disque Render éphémère) ---
-if not _cloudinary_configured():  # noqa: F405
+if not _cloudinary_configured():
     raise ImproperlyConfigured(
         "Cloudinary requis en production : CLOUDINARY_CLOUD_NAME + "
         "CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET "
