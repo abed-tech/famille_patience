@@ -86,8 +86,8 @@ class Command(BaseCommand):
         for name in departments:
             ChurchDepartment.objects.get_or_create(name=name, pole=church_pole, defaults={"description": name})
 
-        from apps.members.profession_defaults import ensure_default_professions
-        ensure_default_professions()
+        from apps.members.seed_catalog import ensure_registration_catalog
+        ensure_registration_catalog()
 
         if not Member.objects.filter(member_number="FP-DEMO001").exists():
             Member.objects.create(

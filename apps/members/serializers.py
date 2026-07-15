@@ -1,7 +1,10 @@
+import logging
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.db import transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import DataError, IntegrityError, transaction
 
 from apps.accounts.models import UserRole
 from .registration_validation import validate_complete_member_profile, as_bool
@@ -16,6 +19,31 @@ from .models import (
 )
 
 User = get_user_model()
+logger = logging.getLogger("famille_patience")
+
+
+def member_photo_url(member, request=None):
+    """URL photo sans lever d'exception (Cloudinary / stockage)."""
+    if not getattr(member, "photo", None):
+        return None
+    try:
+        url = member.photo.url
+    except Exception:
+        return None
+    if request and url and str(url).startswith("/"):
+        return request.build_absolute_uri(url)
+    return url
+
+
+def normalize_optional_url(value):
+    value = (value or "").strip()
+    if not value:
+        return ""
+    if value.lower() in ("null", "undefined", "none"):
+        return ""
+    if not value.startswith(("http://", "https://")):
+        return f"https://{value}"
+    return value[:200]
 
 
 class ChurchPoleSerializer(serializers.ModelSerializer):
@@ -99,6 +127,7 @@ class MemberDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
     user_id = serializers.SerializerMethodField()
     user_role = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
     church_pole_detail = ChurchPoleSerializer(source="church_pole", read_only=True)
     church_department_detail = ChurchDepartmentSerializer(source="church_department", read_only=True)
     family_pole_detail = FamilyPoleSerializer(source="family_pole", read_only=True)
@@ -115,6 +144,9 @@ class MemberDetailSerializer(serializers.ModelSerializer):
 
     def get_user_role(self, obj):
         return obj.user.role if obj.user_id else None
+
+    def get_photo(self, obj):
+        return member_photo_url(obj, self.context.get("request"))
 
     class Meta:
         model = Member
@@ -287,8 +319,8 @@ class MemberRegistrationSerializer(serializers.Serializer):
     phone_secondary = serializers.CharField(max_length=20, required=False, allow_blank=True)
     whatsapp = serializers.CharField(max_length=20)
     member_email = serializers.EmailField(required=False, allow_blank=True)
-    facebook = serializers.URLField(required=False, allow_blank=True)
-    instagram = serializers.URLField(required=False, allow_blank=True)
+    facebook = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    instagram = serializers.CharField(required=False, allow_blank=True, max_length=255)
 
     marital_status = serializers.ChoiceField(
         choices=["single", "married", "divorced", "widowed"],
@@ -300,6 +332,7 @@ class MemberRegistrationSerializer(serializers.Serializer):
         choices=ICCModuleLevel.choices,
         required=False,
         allow_blank=True,
+        allow_null=True,
     )
 
     serves_in_church = serializers.CharField()
@@ -327,6 +360,40 @@ class MemberRegistrationSerializer(serializers.Serializer):
     )
     photo = serializers.ImageField()
 
+    def to_internal_value(self, data):
+        # FormData : convertir les chaînes vides en null pour les FK / champs optionnels
+        empty_as_null = {
+            "church_department",
+            "interested_church_department",
+            "family_pole",
+            "interested_family_pole",
+            "baptism_year",
+            "gender",
+            "facebook",
+            "instagram",
+            "member_email",
+            "phone_secondary",
+            "icc_module_level",
+        }
+        cleaned = {}
+        getlist = getattr(data, "getlist", None)
+        keys = data.keys() if hasattr(data, "keys") else []
+        for key in keys:
+            values = getlist(key) if getlist else [data.get(key)]
+            value = values[0] if values else None
+            if key in empty_as_null and value in ("", "null", "undefined", None):
+                if key == "icc_module_level":
+                    cleaned[key] = ""
+                else:
+                    cleaned[key] = None
+            else:
+                cleaned[key] = value
+        if "photo" not in cleaned:
+            request = self.context.get("request")
+            if request and request.FILES.get("photo"):
+                cleaned["photo"] = request.FILES["photo"]
+        return super().to_internal_value(cleaned)
+
     def validate(self, attrs):
         request = self.context.get("request")
         if request and request.FILES.get("photo") and not attrs.get("photo"):
@@ -334,12 +401,24 @@ class MemberRegistrationSerializer(serializers.Serializer):
 
         if attrs.get("photo"):
             from apps.core.security import validate_uploaded_image
-            validate_uploaded_image(attrs["photo"])
 
-        if attrs["password"] != attrs.pop("password_confirm"):
+            try:
+                validate_uploaded_image(attrs["photo"])
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError({"photo": list(exc.messages)}) from exc
+
+        if attrs["password"] != attrs.pop("password_confirm", None):
             raise serializers.ValidationError({"password_confirm": "Les mots de passe ne correspondent pas."})
         if User.objects.filter(email=attrs["email"]).exists():
             raise serializers.ValidationError({"email": "Cet email est déjà utilisé."})
+
+        attrs["facebook"] = normalize_optional_url(attrs.get("facebook"))
+        attrs["instagram"] = normalize_optional_url(attrs.get("instagram"))
+
+        # Assurer les listes de référence (prod sans Shell)
+        from .seed_catalog import ensure_registration_catalog
+
+        ensure_registration_catalog()
 
         has_photo = bool(attrs.get("photo"))
         validate_complete_member_profile(attrs, require_photo=True, has_photo=has_photo)
@@ -347,8 +426,29 @@ class MemberRegistrationSerializer(serializers.Serializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        member_email = validated_data.pop("member_email", "")
+        member_email = validated_data.pop("member_email", "") or ""
         password = validated_data.pop("password")
+        validated_data.pop("password_confirm", None)
+
+        # Nettoyage des Optionals null
+        for key in (
+            "church_department",
+            "interested_church_department",
+            "family_pole",
+            "interested_family_pole",
+            "facebook",
+            "instagram",
+            "baptism_year",
+            "icc_module_level",
+            "gender",
+        ):
+            if key in validated_data and validated_data[key] in (None, ""):
+                if key in ("baptism_year",):
+                    validated_data[key] = None
+                elif key in ("icc_module_level", "gender", "facebook", "instagram"):
+                    validated_data[key] = ""
+                else:
+                    validated_data[key] = None
 
         user = User.objects.create_user(
             email=validated_data.pop("email"),
@@ -362,7 +462,31 @@ class MemberRegistrationSerializer(serializers.Serializer):
         if member_email:
             validated_data["email"] = member_email
 
-        member = Member.objects.create(user=user, **validated_data)
+        profession_ref = validated_data.get("profession_ref")
+        if profession_ref and not validated_data.get("profession"):
+            validated_data["profession"] = profession_ref.name
+
+        try:
+            member = Member.objects.create(user=user, **validated_data)
+        except (IntegrityError, DataError) as exc:
+            logger.exception("Inscription: erreur base de données")
+            raise serializers.ValidationError(
+                {"detail": "Impossible de créer le profil (données invalides ou déjà utilisées)."}
+            ) from exc
+        except Exception as exc:
+            logger.exception("Inscription: échec création membre (souvent Cloudinary)")
+            msg = str(exc).lower()
+            if validated_data.get("photo") is not None or "cloudinary" in msg or "upload" in msg:
+                raise serializers.ValidationError(
+                    {
+                        "photo": (
+                            "Échec de l'upload de la photo. Vérifiez Cloudinary sur Render "
+                            "(CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
+                            "et supprimez CLOUDINARY_URL si elle est mal formée."
+                        )
+                    }
+                ) from exc
+            raise
 
         MemberHistory.objects.create(
             member=member,

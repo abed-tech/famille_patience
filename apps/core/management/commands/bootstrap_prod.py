@@ -49,34 +49,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Admin créé : {email}"))
 
     def _seed_data(self):
-        from apps.members.models import ChurchPole, FamilyPole, ChurchDepartment
-        from apps.members.profession_defaults import ensure_default_professions
+        from apps.members.seed_catalog import ensure_registration_catalog
 
-        ensure_default_professions()
-        church_pole, _ = ChurchPole.objects.get_or_create(
-            name="Louange", defaults={"description": "Pôle louange", "is_active": True}
-        )
-        FamilyPole.objects.get_or_create(name="Jérusalem", defaults={"description": "Pôle famille", "is_active": True})
-        for name in [
-            "Pôle Restauration",
-            "Pôle Accueil et Intégration",
-            "Pôle Logistique",
-            "Pôle Animation (DCA)",
-            "Pôle Intercession",
-            "Pôle Évangélisation",
-            "Pôle Finance",
-            "Pôle Secrétariat et Communication",
-        ]:
-            FamilyPole.objects.get_or_create(name=name, defaults={"is_active": True})
-
-        for name in [
-            "Ministère de l'Évangélisation",
-            "Ministère de Louange et Adorations",
-            "Ministère de la Communication et Audiovisuel",
-            "Ministère de la Formation",
-        ]:
-            ChurchDepartment.objects.get_or_create(
-                name=name, pole=church_pole, defaults={"description": name, "is_active": True}
-            )
-
+        ensure_registration_catalog()
         self.stdout.write(self.style.SUCCESS("Données de base (professions, pôles) prêtes."))

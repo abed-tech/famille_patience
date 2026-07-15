@@ -17,15 +17,13 @@ if SECRET_KEY == _INSECURE_KEY or len(SECRET_KEY) < 50:  # noqa: F405
     )
 
 # --- Cloudinary obligatoire (disque Render éphémère) ---
-_has_cloudinary_parts = all(
-    os.getenv(k)
-    for k in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET")
-)
-if not (os.getenv("CLOUDINARY_URL") or _has_cloudinary_parts):
+if not _cloudinary_configured():  # noqa: F405
     raise ImproperlyConfigured(
         "Cloudinary requis en production : CLOUDINARY_CLOUD_NAME + "
         "CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET "
-        "(ou CLOUDINARY_URL). Voir docs/DEPLOIEMENT_RENDER.md"
+        "(recommandé), ou CLOUDINARY_URL valide cloudinary://KEY:SECRET@CLOUD. "
+        "Si CLOUDINARY_URL est mal formée, SUPPRIMEZ-LA et utilisez les 3 variables. "
+        "Voir docs/DEPLOIEMENT_RENDER.md"
     )
 
 # --- HTTPS & cookies ---

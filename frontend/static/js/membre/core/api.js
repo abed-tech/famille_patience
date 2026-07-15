@@ -62,8 +62,22 @@ api.requestMultipart = async function (endpoint, formData, method = 'POST') {
             res = await fetch(`/api/v1${endpoint}`, { method, headers, body: formData });
         }
     }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || data.detail || 'Erreur');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        let msg = data.error?.message || data.detail || 'Erreur';
+        const details = data.error?.details || data;
+        if (details && typeof details === 'object' && !Array.isArray(details)) {
+            const parts = Object.entries(details)
+                .filter(([k]) => !['success', 'error', 'message', 'code'].includes(k))
+                .map(([k, v]) => {
+                    const text = Array.isArray(v) ? v[0] : (typeof v === 'object' ? JSON.stringify(v) : v);
+                    return `${k}: ${text}`;
+                })
+                .filter(Boolean);
+            if (parts.length) msg = parts.slice(0, 4).join(' · ');
+        }
+        throw new Error(msg);
+    }
     return data;
 };
 

@@ -11,10 +11,11 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def _cloudinary_configured():
-    """Cloudinary via variables séparées ou CLOUDINARY_URL."""
+    """Cloudinary via variables séparées ou CLOUDINARY_URL valide."""
     if os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET"):
         return True
-    return bool(os.getenv("CLOUDINARY_URL", "").strip())
+    url = (os.getenv("CLOUDINARY_URL") or "").strip()
+    return bool(url and _parse_cloudinary_url(url))
 
 
 def _parse_cloudinary_url(url: str) -> dict | None:
@@ -230,6 +231,19 @@ STORAGES = {
 
 if _cloudinary_configured():
     CLOUDINARY_STORAGE = _cloudinary_storage_settings()
+    # Configurer le SDK explicitement (évite upload 500 si l'app_settings
+    # a été chargé avec un dict vide dans certains ordres d'import).
+    try:
+        import cloudinary
+
+        cloudinary.config(
+            cloud_name=CLOUDINARY_STORAGE["CLOUD_NAME"],
+            api_key=CLOUDINARY_STORAGE["API_KEY"],
+            api_secret=CLOUDINARY_STORAGE["API_SECRET"],
+            secure=True,
+        )
+    except Exception:
+        pass
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

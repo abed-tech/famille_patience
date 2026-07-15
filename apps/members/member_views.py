@@ -24,14 +24,26 @@ class MemberRegistrationView(APIResponseMixin, generics.CreateAPIView):
     """Inscription publique — Application Membre uniquement."""
 
     permission_classes = [AllowAny]
+    authentication_classes = []
     serializer_class = MemberRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         member = serializer.save()
+        try:
+            payload = MemberDetailSerializer(member, context={"request": request}).data
+        except Exception:
+            # Ne jamais transformer une inscription réussie en 500 à cause de la photo
+            payload = {
+                "id": str(member.id),
+                "member_number": member.member_number,
+                "email": member.email or getattr(member.user, "email", ""),
+                "first_name": member.first_name,
+                "last_name": member.last_name,
+            }
         return self.created_response(
-            MemberDetailSerializer(member).data,
+            payload,
             "Inscription réussie. Vous pouvez vous connecter.",
         )
 
@@ -50,9 +62,7 @@ class MyProfileView(APIResponseMixin, generics.RetrieveUpdateAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         member = self.get_object()
-        data = MemberDetailSerializer(member).data
-        if member.photo:
-            data["photo"] = request.build_absolute_uri(member.photo.url)
+        data = MemberDetailSerializer(member, context={"request": request}).data
         return self.success_response(data)
 
     def update(self, request, *args, **kwargs):
@@ -62,9 +72,7 @@ class MyProfileView(APIResponseMixin, generics.RetrieveUpdateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        data = MemberDetailSerializer(member).data
-        if member.photo:
-            data["photo"] = request.build_absolute_uri(member.photo.url)
+        data = MemberDetailSerializer(member, context={"request": request}).data
         return self.success_response(data, "Profil mis à jour.")
 
 
@@ -288,9 +296,15 @@ class PublicChurchPoleListView(APIResponseMixin, generics.ListAPIView):
 
     permission_classes = [AllowAny]
     authentication_classes = []
-    queryset = ChurchPole.objects.filter(is_active=True)
     serializer_class = ChurchPoleSerializer
     pagination_class = None
+
+    def get_queryset(self):
+        from .seed_catalog import ensure_registration_catalog
+
+        if not ChurchPole.objects.filter(is_active=True).exists():
+            ensure_registration_catalog()
+        return ChurchPole.objects.filter(is_active=True).order_by("name")
 
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_queryset(), many=True)
@@ -304,11 +318,15 @@ class PublicChurchDepartmentListView(APIResponseMixin, generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
+        from .seed_catalog import ensure_registration_catalog
+
+        if not ChurchDepartment.objects.filter(is_active=True).exists():
+            ensure_registration_catalog()
         qs = ChurchDepartment.objects.filter(is_active=True).select_related("pole")
         pole = self.request.query_params.get("pole")
         if pole:
             qs = qs.filter(pole_id=pole)
-        return qs
+        return qs.order_by("name")
 
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_queryset(), many=True)
@@ -318,9 +336,15 @@ class PublicChurchDepartmentListView(APIResponseMixin, generics.ListAPIView):
 class PublicFamilyPoleListView(APIResponseMixin, generics.ListAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
-    queryset = FamilyPole.objects.filter(is_active=True)
     serializer_class = FamilyPoleSerializer
     pagination_class = None
+
+    def get_queryset(self):
+        from .seed_catalog import ensure_registration_catalog
+
+        if not FamilyPole.objects.filter(is_active=True).exists():
+            ensure_registration_catalog()
+        return FamilyPole.objects.filter(is_active=True).order_by("name")
 
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_queryset(), many=True)
@@ -335,15 +359,15 @@ class PublicProfessionListView(APIResponseMixin, generics.ListAPIView):
 
     def get_queryset(self):
         from django.db import OperationalError, ProgrammingError
-        from .profession_defaults import ensure_default_professions
+        from .seed_catalog import ensure_registration_catalog
 
         try:
             qs = Profession.objects.filter(is_active=True).order_by("name")
             if not qs.exists():
-                return ensure_default_professions()
+                ensure_registration_catalog()
+                qs = Profession.objects.filter(is_active=True).order_by("name")
             return qs
         except (OperationalError, ProgrammingError):
-            # Table absente (migrations) — liste vide plutôt qu'un 500
             return Profession.objects.none()
 
     def list(self, request, *args, **kwargs):
