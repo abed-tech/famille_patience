@@ -13,6 +13,8 @@ html {
 body {
     overflow-x: hidden;
     min-height: 100dvh;
+    /* Scroll tactile fluide (iOS / Android) */
+    -webkit-overflow-scrolling: touch;
     width: 100%;
     max-width: 100vw;
 }

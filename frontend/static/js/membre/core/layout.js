@@ -1,13 +1,14 @@
 import { api, isReferrer, isCounsellor, hasAgentAccess } from './api.js';
 import { avatarHtml } from './components.js';
 import { icons, navIcon } from './icons.js';
-import { swapContent } from '../../shared/shell.js';
+import { swapContent, scrollToTopInstant } from '../../shared/shell.js';
 import {
     bottomNavHtml, bindBottomNav, refreshBottomNav,
     MEMBER_BOTTOM_NAV, REFERRER_BOTTOM_NAV, COUNSELLOR_MEMBER_BOTTOM_NAV,
 } from '../../shared/bottom-nav.js';
 
 let navBound = false;
+let menuDelegated = false;
 
 const MEMBER_MENU = [
     { id: 'home', path: '/accueil', label: 'Tableau de bord', icon: 'home' },
@@ -114,8 +115,36 @@ function updateHeader(title, subtitle, needsBack, onBack) {
     } else {
         subEl?.remove();
     }
-    const backBtn = document.getElementById('mb-back-btn');
-    if (backBtn && onBack) backBtn.onclick = onBack;
+
+    const left = document.querySelector('.mb-header-left');
+    if (left) {
+        const wantBack = !!needsBack;
+        const hasBack = !!document.getElementById('mb-back-btn');
+        if (wantBack !== hasBack) {
+            const actionHtml = wantBack
+                ? `<button type="button" class="mb-header-action" id="mb-back-btn" aria-label="Retour">${icons.arrowLeft}</button>`
+                : `<button type="button" class="mb-header-action" id="mb-menu-btn" aria-label="Menu">${navIcon('menu', false)}</button>`;
+            left.querySelector('.mb-header-action')?.remove();
+            left.insertAdjacentHTML('afterbegin', actionHtml);
+        }
+        if (wantBack && onBack) {
+            const backBtn = document.getElementById('mb-back-btn');
+            if (backBtn) backBtn.onclick = onBack;
+        }
+    }
+}
+
+function setDrawerOpen(open) {
+    document.getElementById('mb-drawer-overlay')?.classList.toggle('open', open);
+    document.getElementById('mb-drawer')?.classList.toggle('open', open);
+    document.body.classList.toggle('fp-scroll-lock', open);
+    if (open) {
+        document.body.dataset.fpScrollY = String(window.scrollY || 0);
+    } else if (document.body.dataset.fpScrollY != null) {
+        const y = Number(document.body.dataset.fpScrollY) || 0;
+        delete document.body.dataset.fpScrollY;
+        requestAnimationFrame(() => window.scrollTo(0, y));
+    }
 }
 
 export function renderShell(pageId, content, options = {}) {
@@ -125,9 +154,9 @@ export function renderShell(pageId, content, options = {}) {
     const title = options.title || 'Famille Patience';
     const subtitle = options.subtitle || '';
     const needsBack = !!options.back;
-    const hasBack = !!document.getElementById('mb-back-btn');
 
-    if (document.querySelector('.mb-app') && needsBack === hasBack && swapContent('.mb-content', content)) {
+    // Toujours réutiliser le shell existant (plus de remount menu↔retour)
+    if (document.querySelector('.mb-app') && swapContent('.mb-content', content)) {
         updateMbDrawerNav(pageId, unread);
         updateHeader(title, subtitle, needsBack, options.onBack);
         refreshBottomNav(pageId, getBottomNavItems());
@@ -140,7 +169,7 @@ export function renderShell(pageId, content, options = {}) {
     const displayName = user.first_name || user.full_name?.split(' ')[0] || '';
 
     document.getElementById('app').innerHTML = `
-        <div class="mb-app mb-fade-in fp-has-bottom-nav">
+        <div class="mb-app fp-has-bottom-nav">
             <header class="mb-header mb-header-ig">
                 <div class="mb-header-left">
                     ${needsBack
@@ -185,6 +214,7 @@ export function renderShell(pageId, content, options = {}) {
             </div>
         </aside>`;
 
+    scrollToTopInstant();
     bindNav(options.router, options.onBack);
     bindBottomNav(path => options.router.navigate(path));
     if (needsBack && options.onBack) {
@@ -193,16 +223,21 @@ export function renderShell(pageId, content, options = {}) {
 }
 
 function bindNav(router, onBack) {
+    const open = () => setDrawerOpen(true);
+    const close = () => setDrawerOpen(false);
+
+    // Délégation permanente : survit au swap menu ↔ retour
+    if (!menuDelegated) {
+        menuDelegated = true;
+        document.getElementById('app')?.addEventListener('click', (e) => {
+            if (e.target.closest('#mb-menu-btn')) open();
+        });
+    }
+
     if (navBound) return;
     navBound = true;
-    const overlay = document.getElementById('mb-drawer-overlay');
-    const drawer = document.getElementById('mb-drawer');
-    const open = () => { overlay?.classList.add('open'); drawer?.classList.add('open'); };
-    const close = () => { overlay?.classList.remove('open'); drawer?.classList.remove('open'); };
-
-    document.getElementById('mb-menu-btn')?.addEventListener('click', open);
     document.getElementById('mb-drawer-close')?.addEventListener('click', close);
-    overlay?.addEventListener('click', close);
+    document.getElementById('mb-drawer-overlay')?.addEventListener('click', close);
 
     const go = (path) => { close(); router.navigate(path); };
 

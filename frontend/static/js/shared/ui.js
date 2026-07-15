@@ -89,15 +89,24 @@ export function animatePageEnter(root) {
     }
 }
 
+/**
+ * Départ de page ultra-court (1 frame) pour ne pas retarder la navigation.
+ * Respecte prefers-reduced-motion.
+ */
 export function preparePageLeave() {
-    return new Promise(resolve => {
-        const content = document.querySelector(CONTENT_SELECTORS);
-        if (!content) { resolve(); return; }
-        content.classList.add('fp-content-leave');
-        setTimeout(() => {
+    const content = document.querySelector(CONTENT_SELECTORS);
+    if (!content) return Promise.resolve();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+        content.classList.remove('fp-content-leave', 'fp-page-leave');
+        return Promise.resolve();
+    }
+    content.classList.add('fp-content-leave');
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => {
             content.classList.remove('fp-content-leave');
             resolve();
-        }, 40);
+        });
     });
 }
 

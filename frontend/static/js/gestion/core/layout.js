@@ -1,6 +1,6 @@
 import { icons, NAV_ITEMS, PAGE_TITLES } from './icons.js';
 import { api } from './api.js';
-import { swapContent } from '../../shared/shell.js';
+import { swapContent, scrollToTopInstant } from '../../shared/shell.js';
 import {
     bottomNavHtml, bindBottomNav, refreshBottomNav, ADMIN_BOTTOM_NAV,
 } from '../../shared/bottom-nav.js';
@@ -14,13 +14,30 @@ function updateAdmNav(pageId) {
     });
 }
 
+function syncAdmBackButton(needsBack, onBack) {
+    const left = document.querySelector('.adm-topbar-left');
+    if (!left) return;
+    const hasBack = !!document.getElementById('back-btn');
+    if (needsBack && !hasBack) {
+        left.querySelector('#menu-toggle')?.insertAdjacentHTML(
+            'afterend',
+            `<button class="adm-icon-btn" id="back-btn" title="Retour">${icons.arrowLeft}</button>`,
+        );
+    } else if (!needsBack && hasBack) {
+        document.getElementById('back-btn')?.remove();
+    }
+    if (needsBack && onBack) {
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) backBtn.onclick = onBack;
+    }
+}
+
 export function renderShell(pageId, content, options = {}) {
     const user = api.getUser();
     const title = options.title || PAGE_TITLES[pageId] || 'Administration';
     const needsBack = !!options.back;
-    const hasBack = !!document.getElementById('back-btn');
 
-    if (document.querySelector('.adm-app') && needsBack === hasBack && swapContent('.adm-content', content)) {
+    if (document.querySelector('.adm-app') && swapContent('.adm-content', content)) {
         const titleEl = document.querySelector('.adm-topbar-title');
         if (titleEl) titleEl.textContent = title;
         const subEl = document.querySelector('.adm-topbar-breadcrumb');
@@ -30,12 +47,9 @@ export function renderShell(pageId, content, options = {}) {
         } else {
             subEl?.remove();
         }
+        syncAdmBackButton(needsBack, options.onBack);
         updateAdmNav(pageId);
         refreshBottomNav(pageId, ADMIN_BOTTOM_NAV);
-        if (options.onBack) {
-            const backBtn = document.getElementById('back-btn');
-            if (backBtn) backBtn.onclick = options.onBack;
-        }
         return;
     }
 
@@ -94,29 +108,38 @@ export function renderShell(pageId, content, options = {}) {
                         ${options.action || ''}
                     </div>
                 </header>
-                <main class="adm-content adm-fade-in fp-page-enter">${content}</main>
+                <main class="adm-content fp-page-enter">${content}</main>
             </div>
             ${bottomNavHtml(ADMIN_BOTTOM_NAV, pageId)}
         </div>`;
 
+    scrollToTopInstant();
     bindShellEvents(options);
+}
+
+function setAdmSidebarOpen(open) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar?.classList.toggle('open', open);
+    overlay?.classList.toggle('hidden', !open);
+    document.body.classList.toggle('fp-scroll-lock', open);
 }
 
 function bindShellEvents(options = {}) {
     if (shellBound) return;
     shellBound = true;
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const toggle = () => { sidebar?.classList.toggle('open'); overlay?.classList.toggle('hidden'); };
+    const toggle = () => {
+        const open = !document.getElementById('sidebar')?.classList.contains('open');
+        setAdmSidebarOpen(open);
+    };
     document.getElementById('menu-toggle')?.addEventListener('click', toggle);
-    overlay?.addEventListener('click', toggle);
+    document.getElementById('sidebar-overlay')?.addEventListener('click', () => setAdmSidebarOpen(false));
 
     document.querySelectorAll('[data-nav]').forEach(link => {
         link.addEventListener('click', e => {
             e.preventDefault();
             import('../app.js').then(m => m.router.navigate(link.dataset.nav));
-            sidebar?.classList.remove('open');
-            overlay?.classList.add('hidden');
+            setAdmSidebarOpen(false);
         });
     });
 
@@ -142,13 +165,8 @@ function bindShellEvents(options = {}) {
         document.getElementById('back-btn')?.addEventListener('click', options.onBack);
     }
 
-    const openSidebar = () => {
-        sidebar?.classList.add('open');
-        overlay?.classList.remove('hidden');
-    };
-
     bindBottomNav(
         path => import('../app.js').then(m => m.router.navigate(path)),
-        { onMenu: openSidebar },
+        { onMenu: () => setAdmSidebarOpen(true) },
     );
 }

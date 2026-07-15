@@ -38,7 +38,7 @@ body {
 }
 
 /* Loader */
-.adm-loader { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.adm-loader { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
 .adm-spinner { width: 32px; height: 32px; border: 3px solid var(--adm-border); border-top-color: var(--adm-primary); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -53,7 +53,7 @@ body {
 @keyframes adm-toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* Layout */
-.adm-app { display: flex; min-height: 100vh; }
+.adm-app { display: flex; min-height: 100dvh; }
 .adm-sidebar {
     position: fixed; left: 0; top: 0; bottom: 0; width: var(--adm-sidebar-w);
     background: var(--adm-surface); border-right: 1px solid var(--adm-border);
@@ -63,10 +63,13 @@ body {
 .adm-main { flex: 1; margin-left: var(--adm-sidebar-w); min-width: 0; display: flex; flex-direction: column; }
 .adm-topbar {
     position: sticky; top: 0; z-index: 30; height: var(--adm-topbar-h);
-    background: rgba(255,255,255,.85); backdrop-filter: blur(12px);
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--adm-border-light);
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px; gap: 16px;
+    transform: translate3d(0, 0, 0);
 }
 .adm-content { flex: 1; padding: 24px; max-width: 1440px; }
 
@@ -85,7 +88,7 @@ body {
 .adm-nav-link {
     display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px;
     color: var(--adm-text-secondary); font-size: 13px; font-weight: 500; text-decoration: none;
-    transition: all var(--adm-transition); cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+    transition: background var(--adm-transition), color var(--adm-transition), transform var(--adm-transition); cursor: pointer; border: none; background: none; width: 100%; text-align: left;
     min-height: 40px;
 }
 .adm-nav-link:hover { background: var(--adm-primary-light); color: var(--adm-primary); }
@@ -120,7 +123,7 @@ body {
 .adm-icon-btn {
     width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--adm-border);
     background: var(--adm-surface); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all var(--adm-transition); position: relative; color: var(--adm-text-secondary);
+    cursor: pointer; transition: background var(--adm-transition), color var(--adm-transition), border-color var(--adm-transition), box-shadow var(--adm-transition), transform var(--adm-transition); position: relative; color: var(--adm-text-secondary);
 }
 .adm-icon-btn:hover { background: var(--adm-bg); border-color: var(--adm-text-muted); }
 .adm-icon-btn svg { width: 18px; height: 18px; }
@@ -133,7 +136,7 @@ body {
 .adm-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500;
-    font-family: inherit; cursor: pointer; border: none; transition: all var(--adm-transition);
+    font-family: inherit; cursor: pointer; border: none; transition: background var(--adm-transition), color var(--adm-transition), border-color var(--adm-transition), box-shadow var(--adm-transition), transform var(--adm-transition);
     min-height: 38px; white-space: nowrap;
 }
 .adm-btn:active { transform: scale(.98); }
@@ -163,7 +166,7 @@ body {
 .adm-stat-card {
     background: var(--adm-surface); border: 1px solid var(--adm-border-light);
     border-radius: var(--adm-radius-lg); padding: 16px; cursor: pointer;
-    transition: all var(--adm-transition); position: relative; overflow: hidden;
+    transition: background var(--adm-transition), color var(--adm-transition), border-color var(--adm-transition), box-shadow var(--adm-transition), transform var(--adm-transition); position: relative; overflow: hidden;
 }
 .adm-stat-card:hover { border-color: var(--adm-primary-subtle); box-shadow: var(--adm-shadow-md); transform: translateY(-1px); }
 .adm-stat-card::before {
@@ -271,13 +274,13 @@ body {
 .adm-filter-chip {
     padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
     border: 1px solid var(--adm-border); background: var(--adm-surface); cursor: pointer;
-    transition: all var(--adm-transition);
+    transition: background var(--adm-transition), color var(--adm-transition), border-color var(--adm-transition), box-shadow var(--adm-transition), transform var(--adm-transition);
 }
 .adm-filter-chip:hover, .adm-filter-chip.active { border-color: var(--adm-primary); background: var(--adm-primary-light); color: var(--adm-primary); }
 
 /* Login */
 .adm-login-page {
-    min-height: 100vh; display: flex; background: var(--adm-bg);
+    min-height: 100dvh; display: flex; background: var(--adm-bg);
 }
 .adm-login-left {
     flex: 1; display: none; background: linear-gradient(135deg, #831843 0%, #ec4899 50%, #f9a8d4 100%);
@@ -362,7 +365,7 @@ body {
     display: flex; align-items: center; gap: 14px;
     padding: 16px 18px; background: var(--adm-surface);
     border: 1px solid var(--adm-border-light); border-radius: var(--adm-radius-lg);
-    cursor: pointer; transition: all var(--adm-transition); text-align: left; width: 100%;
+    cursor: pointer; transition: background var(--adm-transition), color var(--adm-transition), border-color var(--adm-transition), box-shadow var(--adm-transition), transform var(--adm-transition); text-align: left; width: 100%;
     font-family: inherit; color: inherit;
 }
 .adm-staff-card:hover { border-color: var(--adm-primary); box-shadow: var(--adm-shadow); transform: translateY(-1px); }
