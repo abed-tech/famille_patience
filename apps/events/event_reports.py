@@ -1,5 +1,6 @@
 """Rapports de présence par événement (PDF / Excel / JSON)."""
 import io
+from xml.sax.saxutils import escape
 
 from django.utils import timezone
 from openpyxl import Workbook
@@ -12,6 +13,18 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from apps.members.models import Member, MemberStatus
 from apps.attendance.models import Attendance
 from apps.attendance.services import scan_mode_label
+
+
+def _safe_photo_url(request, member):
+    if not request or not member.photo:
+        return None
+    try:
+        url = member.photo.url
+        if url.startswith(("http://", "https://")):
+            return url
+        return request.build_absolute_uri(url)
+    except Exception:
+        return None
 
 
 def get_event_report_data(event, request=None, counsellor_user=None):
@@ -38,14 +51,11 @@ def get_event_report_data(event, request=None, counsellor_user=None):
 
     def serialize_row(att):
         member = att.member
-        photo = None
-        if request and member.photo:
-            photo = request.build_absolute_uri(member.photo.url)
         ref = member.referrer
         return {
             "member_id": str(member.id),
             "full_name": member.full_name,
-            "photo": photo,
+            "photo": _safe_photo_url(request, member),
             "referrer_name": ref.full_name if ref else "—",
             "referrer_id": str(ref.id) if ref else None,
             "scanned_at": att.scanned_at.isoformat() if att.scanned_at else None,
@@ -66,7 +76,7 @@ def get_event_report_data(event, request=None, counsellor_user=None):
             "description": event.description,
             "date": event.date.isoformat(),
             "time": str(event.time)[:5] if event.time else None,
-            "location": event.location,
+            "location": event.location or "",
             "status": event.status,
             "closed_at": event.updated_at.isoformat() if event.status == "closed" else None,
         },
@@ -88,19 +98,19 @@ def generate_event_excel_report(event, request=None):
     header_fill = PatternFill(start_color="EC4899", end_color="EC4899", fill_type="solid")
 
     ws = wb.active
-    ws.title = "Résumé"
+    ws.title = "Resume"
     ev = data["event"]
     s = data["summary"]
     ws.append(["Rapport d'événement — Famille Patience"])
     ws.append(["Événement", ev["name"]])
     ws.append(["Date", ev["date"]])
-    ws.append(["Lieu", ev["location"]])
+    ws.append(["Lieu", ev["location"] or "—"])
     ws.append(["Participants attendus", s["total_expected"]])
     ws.append(["Présents", s["present_count"]])
     ws.append(["Absents", s["absent_count"]])
     ws.append(["Taux de présence", f"{s['attendance_rate']}%"])
 
-    ws2 = wb.create_sheet("Présents")
+    ws2 = wb.create_sheet("Presents")
     ws2.append(["Nom complet", "Référent", "Heure pointage", "Mode"])
     for cell in ws2[1]:
         cell.font = Font(bold=True, color="FFFFFF")
@@ -136,20 +146,27 @@ def generate_event_pdf_report(event, request=None):
 
     ev = data["event"]
     s = data["summary"]
-    elements.append(Paragraph(f"<b>Rapport — {ev['name']}</b>", styles["Title"]))
+    elements.append(Paragraph(f"<b>Rapport — {escape(ev['name'] or '')}</b>", styles["Title"]))
     elements.append(Paragraph(
-        f"Date : {ev['date']} · Lieu : {ev['location']} · "
-        f"Présents : {s['present_count']} · Absents : {s['absent_count']} · "
-        f"Taux : {s['attendance_rate']}%",
+        escape(
+            f"Date : {ev['date']} · Lieu : {ev['location'] or '—'} · "
+            f"Présents : {s['present_count']} · Absents : {s['absent_count']} · "
+            f"Taux : {s['attendance_rate']}%"
+        ),
         styles["Normal"],
     ))
     elements.append(Spacer(1, 16))
 
-    elements.append(Paragraph("<b>Personnes présentes</b>", styles["Heading2"]))
-    present_data = [["Nom", "Référent", "Heure", "Mode"]]
+    elements.append(Paragraph("<b>Personnes presentes</b>", styles["Heading2"]))
+    present_data = [["Nom", "Referent", "Heure", "Mode"]]
     for row in data["present"][:80]:
         scanned = row["scanned_at"][:16].replace("T", " ") if row["scanned_at"] else "—"
-        present_data.append([row["full_name"], row["referrer_name"], scanned, row["scan_mode"] or "—"])
+        present_data.append([
+            row["full_name"] or "—",
+            row["referrer_name"] or "—",
+            scanned,
+            row["scan_mode"] or "—",
+        ])
     if len(present_data) == 1:
         present_data.append(["—", "—", "—", "—"])
 
@@ -166,9 +183,9 @@ def generate_event_pdf_report(event, request=None):
     elements.append(Spacer(1, 16))
 
     elements.append(Paragraph("<b>Personnes absentes</b>", styles["Heading2"]))
-    absent_data = [["Nom", "Référent"]]
+    absent_data = [["Nom", "Referent"]]
     for row in data["absent"][:80]:
-        absent_data.append([row["full_name"], row["referrer_name"]])
+        absent_data.append([row["full_name"] or "—", row["referrer_name"] or "—"])
     if len(absent_data) == 1:
         absent_data.append(["—", "—"])
 

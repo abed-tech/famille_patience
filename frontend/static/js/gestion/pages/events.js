@@ -388,8 +388,11 @@ async function downloadReport(eventId, format) {
         const a = document.createElement('a');
         a.href = url;
         a.download = `rapport_${eventId}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
         toast('Rapport téléchargé');
     } catch (e) { toast(e.message); }
 }

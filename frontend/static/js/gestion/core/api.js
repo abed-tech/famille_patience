@@ -235,9 +235,12 @@ export class AdminApi {
     }
     getEventReport(id) { return this.req(`/events/${id}/report/`); }
     async downloadEventReport(id, format) {
+        // Utiliser ``export`` et non ``format`` : DRF intercepte ?format= et
+        // renvoie 404 (seul JSONRenderer est configuré).
+        const exportFmt = format === 'pdf' ? 'pdf' : 'excel';
         const headers = {};
         if (this.token) headers.Authorization = `Bearer ${this.token}`;
-        let res = await fetch(`${API}/events/${id}/report/?format=${format}`, { headers });
+        let res = await fetch(`${API}/events/${id}/report/?export=${exportFmt}`, { headers });
         if (res.status === 401 && this.refresh) {
             const r = await fetch(`${API}/auth/refresh/`, {
                 method: 'POST',
@@ -248,10 +251,22 @@ export class AdminApi {
                 const d = await r.json();
                 this.setTokens(d.access, this.refresh);
                 headers.Authorization = `Bearer ${d.access}`;
-                res = await fetch(`${API}/events/${id}/report/?format=${format}`, { headers });
+                res = await fetch(`${API}/events/${id}/report/?export=${exportFmt}`, { headers });
             }
         }
-        if (!res.ok) throw new Error('Erreur lors du téléchargement');
+        if (!res.ok) {
+            let msg = 'Erreur lors du téléchargement';
+            try {
+                const err = await res.json();
+                msg = err.error?.message || err.detail || msg;
+            } catch { /* réponse binaire ou non-JSON */ }
+            throw new Error(msg);
+        }
+        const ctype = res.headers.get('content-type') || '';
+        if (ctype.includes('application/json')) {
+            const err = await res.json();
+            throw new Error(err.error?.message || err.detail || 'Réponse inattendue du serveur');
+        }
         return res.blob();
     }
     getEvents() { return this.req('/events/?page_size=100'); }
