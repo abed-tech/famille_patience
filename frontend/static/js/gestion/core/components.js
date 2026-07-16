@@ -69,16 +69,18 @@ export function statusBadge(status) {
     return badge(label, type);
 }
 
-export function confirmModal(title, message, onConfirm) {
+export function confirmModal(title, message, onConfirm, options = {}) {
+    const confirmLabel = options.confirmLabel || 'Confirmer';
+    const cancelLabel = options.cancelLabel || 'Annuler';
     const overlay = document.createElement('div');
     overlay.className = 'adm-modal-overlay';
     overlay.innerHTML = `
         <div class="adm-modal">
             <div class="adm-modal-header"><h3 class="adm-modal-title">${title}</h3></div>
-            <div class="adm-modal-body"><p style="color:var(--adm-text-secondary)">${message}</p></div>
+            <div class="adm-modal-body"><p style="color:var(--adm-text-secondary);white-space:pre-line">${message}</p></div>
             <div class="adm-modal-footer">
-                <button class="adm-btn adm-btn-secondary" id="modal-cancel">Annuler</button>
-                <button class="adm-btn adm-btn-danger" id="modal-confirm">Confirmer</button>
+                <button class="adm-btn adm-btn-secondary" id="modal-cancel">${cancelLabel}</button>
+                <button class="adm-btn adm-btn-danger" id="modal-confirm">${confirmLabel}</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);

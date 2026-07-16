@@ -15,6 +15,7 @@ from apps.accounts.role_services import (
 )
 from apps.members.models import Member, MemberStatus, MemberHistory
 from apps.members.serializers import MemberDetailSerializer
+from apps.members.member_delete import MemberDeleteError, permanently_delete_member
 from apps.events.models import Event, EventStatus
 from .admin_services import get_admin_dashboard_data, get_live_pointage_data
 from .admin_staff_services import get_admin_referrer_detail, get_admin_counsellor_detail, _staff_photo_url
@@ -159,6 +160,15 @@ class AdminMemberActionView(APIResponseMixin, APIView):
                 description="Membre désactivé par l'administrateur", performed_by=request.user,
             )
             return self.success_response(message="Membre désactivé.")
+        if action == "purge":
+            try:
+                summary = permanently_delete_member(member, performed_by=request.user)
+            except MemberDeleteError as exc:
+                return self.error_response(exc.message, exc.status_code)
+            return self.success_response(
+                summary,
+                f"{summary['full_name']} a été supprimé définitivement de la plateforme.",
+            )
         return self.error_response("Action invalide.")
 
 

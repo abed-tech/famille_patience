@@ -1,12 +1,13 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.core.mixins import APIResponseMixin
 from apps.core.permissions import IsAdmin, IsStaffRole
 from .models import Member, MemberHistory, ChurchPole, ChurchDepartment, FamilyPole, Profession, MemberStatus
+from .member_delete import MemberDeleteError, permanently_delete_member
 from .serializers import (
     MemberListSerializer,
     MemberDetailSerializer,
@@ -124,9 +125,14 @@ class MemberDetailView(MemberQuerysetMixin, APIResponseMixin, generics.RetrieveU
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.status = MemberStatus.INACTIVE
-        instance.save(update_fields=["status"])
-        return self.success_response(message="Membre désactivé.")
+        try:
+            summary = permanently_delete_member(instance, performed_by=request.user)
+        except MemberDeleteError as exc:
+            return self.error_response(exc.message, exc.status_code)
+        return self.success_response(
+            summary,
+            f"{summary['full_name']} a été supprimé définitivement.",
+        )
 
 
 class MemberHistoryView(MemberQuerysetMixin, APIResponseMixin, generics.ListAPIView):

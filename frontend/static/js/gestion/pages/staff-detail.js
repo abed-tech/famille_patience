@@ -293,6 +293,12 @@ export async function renderMemberDetail(id, options = {}) {
                 ${member.status !== 'inactive' ? `<button type="button" class="adm-btn adm-btn-danger adm-btn-sm" id="member-delete">Désactiver</button>` : ''}
             </div>
         </div>
+        ${userRole !== 'admin' ? `
+        <div class="adm-card" style="margin-top:16px;padding:20px;border:1px solid #fecaca">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:#b91c1c">Zone de danger</h3>
+            <p style="font-size:13px;color:var(--adm-text-muted);margin-bottom:12px">Supprime définitivement le membre et toutes ses données de la plateforme.</p>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" id="member-purge">Supprimer définitivement</button>
+        </div>` : ''}
         <div class="adm-grid-2" style="margin-top:16px;gap:16px">
             <div class="adm-card">
                 <div class="adm-card-header"><h3>Informations personnelles</h3></div>
@@ -379,7 +385,7 @@ export async function renderMemberDetail(id, options = {}) {
     document.getElementById('member-delete')?.addEventListener('click', () => {
         confirmModal(
             'Désactiver le membre',
-            `${member.full_name} sera désactivé (soft-delete). Cette action est réversible via « Réactiver ».`,
+            `${member.full_name} sera désactivé. Cette action est réversible via « Réactiver ».`,
             async () => {
                 try {
                     const r = await api.memberAction(id, 'delete');
@@ -387,6 +393,21 @@ export async function renderMemberDetail(id, options = {}) {
                     import('../app.js').then(m => m.router.navigate('/membres'));
                 } catch (e) { toast(e.message); }
             },
+        );
+    });
+
+    document.getElementById('member-purge')?.addEventListener('click', () => {
+        confirmModal(
+            'Supprimer définitivement',
+            `Vous êtes sur le point de supprimer ${member.full_name} de façon définitive.\n\nCette action est irréversible. Seront supprimés : profil, informations personnelles, photo, historique, présences, compte utilisateur et toutes les données associées.\n\nCette action ne pourra pas être annulée.`,
+            async () => {
+                try {
+                    const r = await api.memberAction(id, 'purge');
+                    toast(r.message || 'Membre supprimé définitivement');
+                    import('../app.js').then(m => m.router.navigate('/membres'));
+                } catch (e) { toast(e.message); }
+            },
+            { confirmLabel: 'Supprimer définitivement' },
         );
     });
 
