@@ -311,8 +311,8 @@ class AdminOpenEventsView(APIResponseMixin, APIView):
 
         today = timezone.localdate()
         events = (
-            Event.objects.filter(status=EventStatus.OPEN, date=today)
-            .order_by("time", "name")
+            Event.objects.filter(status=EventStatus.OPEN)
+            .order_by("-date", "time", "name")
             .values("id", "name", "date", "time", "location")
         )
         return self.success_response([
@@ -321,6 +321,7 @@ class AdminOpenEventsView(APIResponseMixin, APIView):
                 "id": str(e["id"]),
                 "date": e["date"].isoformat() if e.get("date") else None,
                 "time": e["time"].isoformat() if e.get("time") else None,
+                "is_today": e.get("date") == today,
             }
             for e in events
         ])

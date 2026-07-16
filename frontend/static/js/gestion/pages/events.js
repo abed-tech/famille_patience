@@ -160,6 +160,7 @@ let pointageInterval = null;
 let qrScanner = null;
 let scanCooldown = false;
 let cameraPermissionDenied = false;
+let refreshPointageLive = null;
 
 export async function renderPointage() {
     if (!api.token) return;
@@ -220,6 +221,14 @@ export async function renderPointage() {
             </div>
         </div>`, { subtitle: 'Temps réel' });
 
+    async function load() {
+        try {
+            const data = (await api.getLivePointage()).data;
+            updatePointageUI(data);
+        } catch { /* silencieux pour le polling */ }
+    }
+    refreshPointageLive = load;
+
     if (openEvents.length && typeof Html5Qrcode !== 'undefined') {
         await startQrScanner(defaultEventId);
         document.getElementById('scan-event')?.addEventListener('change', async (e) => {
@@ -237,16 +246,9 @@ export async function renderPointage() {
             const r = await api.adminScan(qr, eventId, 'manual');
             toast(r.message || `Présence enregistrée : ${r.data?.member_name || ''}`);
             document.getElementById('manual-qr').value = '';
-            load();
+            await load();
         } catch (e) { toast(e.message); }
     });
-
-    async function load() {
-        try {
-            const data = (await api.getLivePointage()).data;
-            updatePointageUI(data);
-        } catch { /* silencieux pour le polling */ }
-    }
 
     await load();
     if (pointageInterval) clearInterval(pointageInterval);
@@ -275,6 +277,7 @@ async function startQrScanner(eventId) {
                         status.style.color = '#10b981';
                     }
                     toast(r.message || 'Présence enregistrée');
+                    if (typeof refreshPointageLive === 'function') await refreshPointageLive();
                 } catch (e) {
                     if (status) {
                         status.textContent = e.message;
@@ -353,6 +356,7 @@ function updatePointageUI(data) {
 
 export async function stopPointagePolling() {
     if (pointageInterval) { clearInterval(pointageInterval); pointageInterval = null; }
+    refreshPointageLive = null;
     await stopQrScanner();
 }
 

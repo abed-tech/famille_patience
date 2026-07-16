@@ -249,12 +249,12 @@ export async function renderPointageScan(router) {
 
     document.getElementById('ptg-scan-btn')?.addEventListener('click', () => {
         const qr = document.getElementById('ptg-qr-input')?.value?.trim();
-        if (qr) recordScan(qr, 'qr', router);
+        if (qr) recordScan(qr, 'manual', router);
     });
     document.getElementById('ptg-qr-input')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
             const qr = e.target.value.trim();
-            if (qr) recordScan(qr, 'qr', router);
+            if (qr) recordScan(qr, 'manual', router);
         }
     });
 

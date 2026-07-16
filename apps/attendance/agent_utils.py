@@ -5,8 +5,6 @@ temporaire liée à un événement (EventAgentAssignment). Tout membre, référe
 conseiller avec un compte utilisateur peut être désigné par l'administrateur.
 """
 
-from django.utils import timezone
-
 from apps.events.models import EventStatus
 from .models import EventAgentAssignment
 
@@ -14,12 +12,10 @@ from .models import EventAgentAssignment
 def user_has_active_assignment(user, event_id=None):
     if not user or not user.is_authenticated:
         return False
-    today = timezone.localdate()
     qs = EventAgentAssignment.objects.filter(
         agent=user,
         is_active=True,
         event__status=EventStatus.OPEN,
-        event__date=today,
     )
     if event_id:
         qs = qs.filter(event_id=event_id)
@@ -27,13 +23,11 @@ def user_has_active_assignment(user, event_id=None):
 
 
 def get_user_active_assignments(user):
-    today = timezone.localdate()
     return (
         EventAgentAssignment.objects.filter(
             agent=user,
             is_active=True,
             event__status=EventStatus.OPEN,
-            event__date=today,
         )
         .select_related("event")
         .order_by("event__date", "event__time")
@@ -82,18 +76,12 @@ def get_user_assigned_events_list(user):
             "location": event.location,
             "status": event.status,
             "can_scan": (
-                event.status == EventStatus.OPEN
-                and assignment.is_active
-                and event.date == timezone.localdate()
+                event.status == EventStatus.OPEN and assignment.is_active
             ),
             "present_count": present,
             "expected_count": expected,
         }
-        if (
-            event.status == EventStatus.OPEN
-            and assignment.is_active
-            and event.date == timezone.localdate()
-        ):
+        if event.status == EventStatus.OPEN and assignment.is_active:
             open_list.append(item)
         elif event.status == EventStatus.CLOSED:
             closed_list.append(item)

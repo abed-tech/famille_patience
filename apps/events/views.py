@@ -120,7 +120,14 @@ class EventOpenView(APIResponseMixin, generics.GenericAPIView):
                 )
 
             event.status = EventStatus.OPEN
-            event.save(update_fields=["status", "updated_at"])
+            # Aligner la date sur aujourd'hui pour que la séance ouverte = séance du jour
+            from django.utils import timezone
+            today = timezone.localdate()
+            update_fields = ["status", "updated_at"]
+            if event.date != today:
+                event.date = today
+                update_fields.append("date")
+            event.save(update_fields=update_fields)
 
         message = f"Événement ouvert. Agents pointeurs : {', '.join(assigned)}."
         if errors:

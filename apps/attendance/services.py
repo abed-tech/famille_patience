@@ -46,20 +46,19 @@ def revoke_event_agents(event):
     EventAgentAssignment.objects.filter(event=event, is_active=True).update(is_active=False)
 
 
-def open_events_today():
-    """Événements / séances ouverts pour la date du jour (fuseau local)."""
-    today = timezone.localdate()
-    return Event.objects.filter(status=EventStatus.OPEN, date=today).order_by("time", "name")
+def open_events_for_pointage():
+    """Événements ouverts disponibles pour le pointage (séance active)."""
+    return Event.objects.filter(status=EventStatus.OPEN).order_by("-date", "time", "name")
 
 
 def get_scannable_event(event_id=None, *, agent=None, require_agent_assignment=False):
     """
-    Résout l'événement ouvert du jour pour le pointage.
-    Si event_id est omis et qu'un seul événement du jour est ouvert (et assigné),
+    Résout l'événement ouvert pour le pointage.
+    Tout événement au statut OPEN est scannable (séance active).
+    Si event_id est omis et qu'un seul événement est ouvert (et assigné),
     il est sélectionné automatiquement.
     """
-    today = timezone.localdate()
-    qs = Event.objects.filter(status=EventStatus.OPEN, date=today)
+    qs = Event.objects.filter(status=EventStatus.OPEN)
 
     if require_agent_assignment and agent:
         qs = qs.filter(
@@ -74,10 +73,6 @@ def get_scannable_event(event_id=None, *, agent=None, require_agent_assignment=F
             raise AttendanceScanError("Événement introuvable.", 404) from exc
         if event.status != EventStatus.OPEN:
             raise AttendanceScanError("Événement fermé. Le pointage n'est plus possible.")
-        if event.date != today:
-            raise AttendanceScanError(
-                "Le pointage n'est autorisé que pour l'événement ou la séance du jour."
-            )
         if require_agent_assignment and agent:
             if not qs.filter(pk=event.pk).exists():
                 raise AttendanceScanError(
@@ -89,11 +84,16 @@ def get_scannable_event(event_id=None, *, agent=None, require_agent_assignment=F
     count = qs.count()
     if count == 0:
         raise AttendanceScanError(
-            "Aucun événement ouvert aujourd'hui. Impossible d'enregistrer la présence."
+            "Aucun événement ouvert. Impossible d'enregistrer la présence."
         )
     if count > 1:
+        # Préférer l'événement du jour s'il n'y en a qu'un
+        today = timezone.localdate()
+        today_qs = qs.filter(date=today)
+        if today_qs.count() == 1:
+            return today_qs.first()
         raise AttendanceScanError(
-            "Plusieurs événements ouverts aujourd'hui. Indiquez l'événement concerné."
+            "Plusieurs événements ouverts. Indiquez l'événement concerné."
         )
     return qs.first()
 
@@ -101,7 +101,7 @@ def get_scannable_event(event_id=None, *, agent=None, require_agent_assignment=F
 def resolve_member_from_scan_value(scan_value, *, qr_only=False):
     """
     Résout un membre depuis une valeur scannée.
-    Mode QR (qr_only=True) : uniquement le code QR unique (insensible à la casse).
+    Mode QR : code QR unique, ou numéro membre (saisie manuelle du même écran).
     Mode manuel : QR, numéro membre, ou téléphone.
     """
     value = (scan_value or "").strip()
@@ -109,11 +109,12 @@ def resolve_member_from_scan_value(scan_value, *, qr_only=False):
         return None
 
     member = Member.objects.filter(qr_code__iexact=value, status=MemberStatus.ACTIVE).first()
-    if member or qr_only:
+    if member:
         return member
 
+    # Toujours accepter le n° membre (unique) — même depuis l'écran scanner
     member = Member.objects.filter(member_number__iexact=value, status=MemberStatus.ACTIVE).first()
-    if member:
+    if member or qr_only:
         return member
 
     phone = value.replace(" ", "")

@@ -27,23 +27,25 @@ export class AdminApi {
     setUser(u) { localStorage.setItem(`${this.prefix}user`, JSON.stringify(u)); }
 
     async req(endpoint, opts = {}) {
-        const method = (opts.method || 'GET').toUpperCase();
+        const { cache: memCache, ...fetchOpts } = opts;
+        const method = (fetchOpts.method || 'GET').toUpperCase();
         const cacheKey = `${this.prefix}${endpoint}`;
+        const useCache = method === 'GET' && memCache !== false;
 
-        if (method === 'GET') {
+        if (useCache) {
             const hit = apiCache.get(cacheKey);
             if (hit) return hit;
-        } else {
+        } else if (method !== 'GET') {
             apiCache.invalidatePrefix(this.prefix);
         }
 
-        const headers = { ...opts.headers };
-        if (!(opts.body instanceof FormData) && !headers['Content-Type']) {
+        const headers = { ...fetchOpts.headers };
+        if (!(fetchOpts.body instanceof FormData) && !headers['Content-Type']) {
             headers['Content-Type'] = 'application/json';
         }
         if (this.token) headers.Authorization = `Bearer ${this.token}`;
 
-        let res = await fetch(`${API}${endpoint}`, { ...opts, headers });
+        let res = await fetch(`${API}${endpoint}`, { ...fetchOpts, headers });
 
         if (res.status === 401 && this.refresh) {
             const r = await fetch(`${API}/auth/refresh/`, {
@@ -55,7 +57,7 @@ export class AdminApi {
                 const d = await r.json();
                 this.setTokens(d.access, this.refresh);
                 headers.Authorization = `Bearer ${d.access}`;
-                res = await fetch(`${API}${endpoint}`, { ...opts, headers });
+                res = await fetch(`${API}${endpoint}`, { ...fetchOpts, headers });
             } else {
                 this.clear();
             }
@@ -77,7 +79,7 @@ export class AdminApi {
                 || 'Erreur serveur';
             throw new Error(typeof msg === 'string' ? msg : 'Erreur serveur');
         }
-        if (method === 'GET') apiCache.set(cacheKey, data);
+        if (useCache) apiCache.set(cacheKey, data);
         return data;
     }
 
@@ -129,13 +131,13 @@ export class AdminApi {
     login(email, password) { return this.req('/auth/login/gestion/', { method: 'POST', body: JSON.stringify({ email, password }) }); }
     getProfile() { return this.req('/auth/profile/'); }
     getDashboard() { return this.req('/dashboard/admin/full/'); }
-    getLivePointage() { return this.req('/dashboard/admin/live-pointage/'); }
+    getLivePointage() { return this.req('/dashboard/admin/live-pointage/', { cache: false }); }
     getActivityLog() { return this.req('/dashboard/admin/activity/'); }
     getReferrers() { return this.req('/dashboard/admin/referrers/'); }
     getReferrer(id) { return this.req(`/dashboard/admin/referrers/${id}/`); }
     getCounsellors() { return this.req('/dashboard/admin/counsellors/'); }
     getCounsellor(id) { return this.req(`/dashboard/admin/counsellors/${id}/`); }
-    getOpenEvents() { return this.req('/dashboard/admin/open-events/'); }
+    getOpenEvents() { return this.req('/dashboard/admin/open-events/', { cache: false }); }
     getMembers(q = '') {
         const sep = q && !q.startsWith('?') ? '?' : '';
         const extra = q ? `${sep}${q.replace(/^\?/, '')}&` : '?';

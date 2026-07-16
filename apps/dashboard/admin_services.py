@@ -225,7 +225,7 @@ def get_admin_dashboard_data():
 def get_live_pointage_data():
     """Données temps réel pour la page pointage admin."""
     today = timezone.localdate()
-    open_events = Event.objects.filter(status=EventStatus.OPEN, date=today)
+    open_events = Event.objects.filter(status=EventStatus.OPEN).order_by("-date", "time", "name")
 
     agents = list(
         EventAgentAssignment.objects.filter(is_active=True, event__in=open_events)
@@ -268,6 +268,12 @@ def get_live_pointage_data():
             "present": present,
             "absent": max(active_count - present, 0),
             "total_members": active_count,
+            "is_today": event.date == today,
         }
 
-    return {"agents": agents, "recent_scans": recent, "event_stats": stats, "date": today.isoformat()}
+    return {
+        "agents": agents,
+        "recent_scans": recent,
+        "event_stats": stats,
+        "date": today.isoformat(),
+    }
