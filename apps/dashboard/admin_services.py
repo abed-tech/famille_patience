@@ -224,8 +224,8 @@ def get_admin_dashboard_data():
 
 def get_live_pointage_data():
     """Données temps réel pour la page pointage admin."""
-    today = timezone.now().date()
-    open_events = Event.objects.filter(status=EventStatus.OPEN)
+    today = timezone.localdate()
+    open_events = Event.objects.filter(status=EventStatus.OPEN, date=today)
 
     agents = list(
         EventAgentAssignment.objects.filter(is_active=True, event__in=open_events)
@@ -236,24 +236,28 @@ def get_live_pointage_data():
         )
     )
     for a in agents:
-        a["agent_name"] = f"{a.pop('agent__first_name')} {a.pop('agent__last_name')}"
+        a["agent_name"] = f"{a.pop('agent__first_name')} {a.pop('agent__last_name')}".strip()
         a["event_id"] = str(a.pop("event__id"))
         a["event_name"] = a.pop("event__name")
 
     recent = list(
         Attendance.objects.filter(event__in=open_events, is_present=True)
         .select_related("member", "event", "scanned_by")
-        .order_by("-scanned_at")[:20]
+        .order_by("-scanned_at")[:30]
         .values(
             "member__first_name", "member__last_name", "event__name",
-            "scanned_at", "scanned_by__first_name",
+            "scanned_at", "scanned_by__first_name", "scanned_by__last_name",
+            "scan_mode",
         )
     )
     for r in recent:
         r["member_name"] = f"{r.pop('member__first_name')} {r.pop('member__last_name')}"
         r["event_name"] = r.pop("event__name")
-        r["agent_name"] = r.pop("scanned_by__first_name", "")
-        r["scanned_at"] = r["scanned_at"].isoformat()
+        r["agent_name"] = (
+            f"{r.pop('scanned_by__first_name', '') or ''} "
+            f"{r.pop('scanned_by__last_name', '') or ''}"
+        ).strip() or "—"
+        r["scanned_at"] = r["scanned_at"].isoformat() if r["scanned_at"] else None
 
     stats = {}
     for event in open_events:
@@ -266,4 +270,4 @@ def get_live_pointage_data():
             "total_members": active_count,
         }
 
-    return {"agents": agents, "recent_scans": recent, "event_stats": stats}
+    return {"agents": agents, "recent_scans": recent, "event_stats": stats, "date": today.isoformat()}

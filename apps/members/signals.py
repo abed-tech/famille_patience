@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from django.db.models.signals import pre_save
@@ -6,14 +7,30 @@ from django.dispatch import receiver
 from .models import Member, MemberHistory
 
 
+def _unique_value(prefix, factory, field_name, max_attempts=12):
+    """Génère une valeur unique en base pour le champ donné."""
+    for _ in range(max_attempts):
+        value = f"{prefix}{factory()}"
+        if not Member.objects.filter(**{field_name: value}).exists():
+            return value
+    raise RuntimeError(f"Impossible de générer un {field_name} unique.")
+
+
 def generate_member_number():
-    """Génère un numéro de membre unique."""
-    return f"FP-{uuid.uuid4().hex[:8].upper()}"
+    """Génère un numéro de membre unique (vérifié en base)."""
+    return _unique_value("FP-", lambda: uuid.uuid4().hex[:8].upper(), "member_number")
 
 
 def generate_qr_code():
-    """Génère un code QR unique."""
-    return f"FPQR-{uuid.uuid4().hex}"
+    """
+    Génère un code QR unique et non devinable.
+    Format : FPQR-<32 hex UUID>-<8 hex secrets> — contrainte unique en base.
+    """
+    return _unique_value(
+        "FPQR-",
+        lambda: f"{uuid.uuid4().hex}-{secrets.token_hex(4)}",
+        "qr_code",
+    )
 
 
 @receiver(pre_save, sender=Member)
@@ -34,6 +51,18 @@ def delete_old_member_photo(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Member)
 def set_member_identifiers(sender, instance, **kwargs):
+    """Attribue numéro et QR une seule fois ; empêche toute réécriture du QR."""
+    if instance.pk:
+        try:
+            existing = Member.objects.only("member_number", "qr_code").get(pk=instance.pk)
+        except Member.DoesNotExist:
+            existing = None
+        if existing:
+            if existing.member_number:
+                instance.member_number = existing.member_number
+            if existing.qr_code:
+                instance.qr_code = existing.qr_code
+
     if not instance.member_number:
         instance.member_number = generate_member_number()
     if not instance.qr_code:

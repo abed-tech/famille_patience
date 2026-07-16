@@ -1,17 +1,22 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 
 from apps.core.mixins import APIResponseMixin
-from apps.core.permissions import IsAdmin, IsAttendanceAgent
+from apps.core.permissions import IsAdmin
 from apps.events.models import Event, EventStatus
 from apps.members.models import Member
-from .models import Attendance, EventAgentAssignment
+from .models import Attendance
 from .serializers import AttendanceSerializer, ScanQRSerializer, AssignAgentSerializer
-from .services import assign_attendance_agent, record_attendance
+from .services import (
+    AttendanceScanError,
+    assign_attendance_agent,
+    get_scannable_event,
+    record_attendance,
+    resolve_member_from_scan_value,
+)
 from .agent_utils import user_has_active_assignment
 
 User = get_user_model()
@@ -27,29 +32,6 @@ def _resolve_agent_user(validated_data):
         return member.user
     return User.objects.get(pk=agent_id)
 
-def resolve_member_from_scan_value(scan_value):
-    """
-    Résout un membre depuis une valeur scannée ou saisie:
-    QR code, numéro membre, téléphone.
-    """
-    value = (scan_value or "").strip()
-    if not value:
-        return None
-
-    member = Member.objects.filter(qr_code__iexact=value, status="active").first()
-    if member:
-        return member
-
-    member = Member.objects.filter(member_number__iexact=value, status="active").first()
-    if member:
-        return member
-
-    phone = value.replace(" ", "")
-    return Member.objects.filter(
-        Q(phone_primary__icontains=phone) | Q(phone_secondary__icontains=phone),
-        status="active",
-    ).first()
-
 
 def broadcast_attendance(event_id, attendance_data):
     """Diffuse une mise à jour de présence en temps réel."""
@@ -59,6 +41,47 @@ def broadcast_attendance(event_id, attendance_data):
             f"event_{event_id}",
             {"type": "attendance.update", "data": attendance_data},
         )
+
+
+def _process_scan(request, *, require_agent_assignment):
+    """Logique commune agent / admin pour enregistrer une présence."""
+    serializer = ScanQRSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    qr_code = serializer.validated_data["qr_code"]
+    event_id = serializer.validated_data.get("event_id")
+    mode = serializer.validated_data.get("scan_mode", "qr")
+    qr_only = mode == "qr"
+
+    event = get_scannable_event(
+        event_id,
+        agent=request.user if require_agent_assignment else None,
+        require_agent_assignment=require_agent_assignment,
+    )
+
+    member = resolve_member_from_scan_value(qr_code, qr_only=qr_only)
+    if not member:
+        raise AttendanceScanError(
+            "QR code invalide ou membre inactif." if qr_only
+            else "Membre introuvable (QR, numéro ou téléphone).",
+            404,
+        )
+
+    scan_mode = Attendance.ScanMode.MANUAL if mode == "manual" else Attendance.ScanMode.QR
+    attendance, created = record_attendance(
+        event, member, request.user, scan_mode=scan_mode
+    )
+    data = AttendanceSerializer(attendance).data
+    data["member_name"] = member.full_name
+    data["event_name"] = event.name
+    data["agent_name"] = request.user.full_name
+    broadcast_attendance(str(event.id), data)
+
+    if created:
+        message = "Présence enregistrée."
+    else:
+        message = "Présence déjà enregistrée pour cet événement."
+    return data, message
 
 
 class AssignAgentView(APIResponseMixin, generics.GenericAPIView):
@@ -99,37 +122,15 @@ class ScanQRView(APIResponseMixin, generics.GenericAPIView):
     serializer_class = ScanQRSerializer
 
     def post(self, request):
-        serializer = ScanQRSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        qr_code = serializer.validated_data["qr_code"]
-        event_id = serializer.validated_data["event_id"]
-
-        try:
-            event = Event.objects.get(pk=event_id, status=EventStatus.OPEN)
-        except Event.DoesNotExist:
-            return self.error_response("Événement introuvable ou fermé.", status.HTTP_404_NOT_FOUND)
-
-        if not user_has_active_assignment(request.user, event_id=event_id):
-            return self.error_response("Vous n'êtes pas autorisé à pointer pour cet événement.", status.HTTP_403_FORBIDDEN)
-
-        member = resolve_member_from_scan_value(qr_code)
-        if not member:
+        if not user_has_active_assignment(request.user):
             return self.error_response(
-                "Membre introuvable (QR, numéro ou téléphone).",
-                status.HTTP_404_NOT_FOUND,
+                "Vous n'êtes pas autorisé à pointer (aucune affectation active).",
+                status.HTTP_403_FORBIDDEN,
             )
-
-        mode = serializer.validated_data.get("scan_mode", "qr")
-        scan_mode = Attendance.ScanMode.MANUAL if mode == "manual" else Attendance.ScanMode.QR
-        attendance, created = record_attendance(
-            event, member, request.user, scan_mode=scan_mode
-        )
-        data = AttendanceSerializer(attendance).data
-
-        broadcast_attendance(str(event_id), data)
-
-        message = "Présence enregistrée." if created else "Présence déjà enregistrée, mise à jour effectuée."
+        try:
+            data, message = _process_scan(request, require_agent_assignment=True)
+        except AttendanceScanError as exc:
+            return self.error_response(exc.message, exc.status_code)
         return self.success_response(data, message)
 
 
@@ -140,34 +141,10 @@ class AdminScanQRView(APIResponseMixin, generics.GenericAPIView):
     serializer_class = ScanQRSerializer
 
     def post(self, request):
-        serializer = ScanQRSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        qr_code = serializer.validated_data["qr_code"]
-        event_id = serializer.validated_data["event_id"]
-
         try:
-            event = Event.objects.get(pk=event_id, status=EventStatus.OPEN)
-        except Event.DoesNotExist:
-            return self.error_response("Événement introuvable ou fermé.", status.HTTP_404_NOT_FOUND)
-
-        member = resolve_member_from_scan_value(qr_code)
-        if not member:
-            return self.error_response(
-                "Code invalide ou membre inactif (QR ou numéro membre).",
-                status.HTTP_404_NOT_FOUND,
-            )
-
-        mode = serializer.validated_data.get("scan_mode", "qr")
-        scan_mode = Attendance.ScanMode.MANUAL if mode == "manual" else Attendance.ScanMode.QR
-        attendance, created = record_attendance(
-            event, member, request.user, scan_mode=scan_mode
-        )
-        data = AttendanceSerializer(attendance).data
-        data["member_name"] = member.full_name
-        broadcast_attendance(str(event_id), data)
-
-        message = "Présence enregistrée." if created else "Présence déjà enregistrée."
+            data, message = _process_scan(request, require_agent_assignment=False)
+        except AttendanceScanError as exc:
+            return self.error_response(exc.message, exc.status_code)
         return self.success_response(data, message)
 
 

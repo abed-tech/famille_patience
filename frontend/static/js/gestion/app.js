@@ -57,6 +57,10 @@ async function stopPointagePolling() {
         const m = await import('./pages/events.js');
         m.stopPointagePolling();
     } catch { /* */ }
+    try {
+        const d = await import('./pages/dashboard.js');
+        d.stopDashboardScanPolling();
+    } catch { /* */ }
 }
 
 class Router {

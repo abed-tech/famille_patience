@@ -149,7 +149,6 @@ class AgentMemberSearchView(APIResponseMixin, APIView):
             | Q(member_number__icontains=query)
             | Q(phone_primary__icontains=query)
             | Q(phone_secondary__icontains=query)
-            | Q(qr_code__icontains=query)
         ).order_by("last_name", "first_name")[:15]
 
         return self.success_response([
@@ -158,7 +157,6 @@ class AgentMemberSearchView(APIResponseMixin, APIView):
                 "full_name": m.full_name,
                 "member_number": m.member_number,
                 "phone_primary": m.phone_primary,
-                "qr_code": m.qr_code,
             }
             for m in members
         ])

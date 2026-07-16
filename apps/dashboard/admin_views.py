@@ -307,8 +307,23 @@ class AdminOpenEventsView(APIResponseMixin, APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
-        events = Event.objects.filter(status=EventStatus.OPEN).values("id", "name", "date", "location")
-        return self.success_response([{**e, "id": str(e["id"])} for e in events])
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        events = (
+            Event.objects.filter(status=EventStatus.OPEN, date=today)
+            .order_by("time", "name")
+            .values("id", "name", "date", "time", "location")
+        )
+        return self.success_response([
+            {
+                **e,
+                "id": str(e["id"]),
+                "date": e["date"].isoformat() if e.get("date") else None,
+                "time": e["time"].isoformat() if e.get("time") else None,
+            }
+            for e in events
+        ])
 
 
 class AdminReportView(APIResponseMixin, APIView):

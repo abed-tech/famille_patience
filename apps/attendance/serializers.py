@@ -27,7 +27,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 class ScanQRSerializer(serializers.Serializer):
     qr_code = serializers.CharField(max_length=100)
-    event_id = serializers.UUIDField()
+    event_id = serializers.UUIDField(required=False, allow_null=True)
     scan_mode = serializers.ChoiceField(
         choices=[("qr", "QR Code"), ("manual", "Manuel")],
         required=False,

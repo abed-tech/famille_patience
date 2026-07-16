@@ -3,7 +3,28 @@ import { api } from '../core/api.js';
 import { statCard, createChart, destroyCharts, formatDateTime, toast } from '../core/components.js';
 import { icons } from '../core/icons.js';
 
+let dashboardScanInterval = null;
+
+export function stopDashboardScanPolling() {
+    if (dashboardScanInterval) {
+        clearInterval(dashboardScanInterval);
+        dashboardScanInterval = null;
+    }
+}
+
+function renderScansTable(scans) {
+    return (scans || []).map(s => `
+        <tr>
+            <td>${s.member_name}</td>
+            <td>${s.event_name}</td>
+            <td>${s.agent_name || '—'}</td>
+            <td>${formatDateTime(s.scanned_at)}</td>
+        </tr>`).join('')
+        || '<tr><td colspan="4" style="text-align:center;color:var(--adm-text-muted)">Aucun scan</td></tr>';
+}
+
 export async function renderDashboard() {
+    stopDashboardScanPolling();
     if (!api.token) return;
     let data;
     try {
@@ -63,8 +84,8 @@ export async function renderDashboard() {
                 <div class="adm-card-header"><span class="adm-card-title">Derniers pointages</span><span class="adm-live-dot"></span></div>
                 <div class="adm-card-body adm-table-wrap">
                     <table class="adm-table">
-                        <thead><tr><th>Membre</th><th>Événement</th><th>Heure</th></tr></thead>
-                        <tbody>${(data.recent_scans || []).map(s => `<tr><td>${s.member_name}</td><td>${s.event_name}</td><td>${formatDateTime(s.scanned_at)}</td></tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--adm-text-muted)">Aucun scan</td></tr>'}</tbody>
+                        <thead><tr><th>Membre</th><th>Événement</th><th>Agent</th><th>Date & heure</th></tr></thead>
+                        <tbody id="dashboard-scans-body">${renderScansTable(data.recent_scans)}</tbody>
                     </table>
                 </div>
             </div>
@@ -82,4 +103,16 @@ export async function renderDashboard() {
     createChart('chart-age', 'bar', c.age?.map(x => x.label), c.age?.map(x => x.value), '#8b5cf6');
     createChart('chart-poles', 'bar', c.poles?.map(x => x.label), c.poles?.map(x => x.value), '#f59e0b');
     createChart('chart-dept', 'bar', c.departments?.map(x => x.label), c.departments?.map(x => x.value), '#3b82f6');
+
+    async function refreshScans() {
+        try {
+            const live = (await api.getLivePointage()).data;
+            const body = document.getElementById('dashboard-scans-body');
+            if (body && live?.recent_scans) {
+                body.innerHTML = renderScansTable(live.recent_scans);
+            }
+        } catch { /* polling silencieux */ }
+    }
+
+    dashboardScanInterval = setInterval(refreshScans, 3000);
 }

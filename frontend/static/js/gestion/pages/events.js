@@ -250,7 +250,7 @@ export async function renderPointage() {
 
     await load();
     if (pointageInterval) clearInterval(pointageInterval);
-    pointageInterval = setInterval(load, 5000);
+    pointageInterval = setInterval(load, 3000);
 }
 
 async function startQrScanner(eventId) {
@@ -331,9 +331,24 @@ function updatePointageUI(data) {
             <span style="font-weight:500">${a.agent_name}</span><span style="color:var(--adm-text-muted)">${a.event_name}</span>
         </div>`).join('') || '<p style="color:var(--adm-text-muted);font-size:13px">Aucun agent actif</p>';
 
-    document.getElementById('scans-list').innerHTML = `<table class="adm-table"><tbody>
-        ${(data.recent_scans || []).map(s => `<tr><td>${s.member_name}</td><td>${s.event_name}</td><td style="font-size:12px;color:var(--adm-text-muted)">${new Date(s.scanned_at).toLocaleTimeString('fr-FR')}</td></tr>`).join('')}
-    </tbody></table>` || '<p style="padding:16px;color:var(--adm-text-muted)">Aucun scan</p>';
+    const scans = data.recent_scans || [];
+    document.getElementById('scans-list').innerHTML = scans.length
+        ? `<table class="adm-table">
+            <thead><tr><th>Membre</th><th>Événement</th><th>Agent</th><th>Date & heure</th></tr></thead>
+            <tbody>${scans.map(s => {
+                const dt = s.scanned_at ? new Date(s.scanned_at) : null;
+                const dateStr = dt
+                    ? `${dt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })} à ${dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                    : '—';
+                return `<tr>
+                    <td>${s.member_name}</td>
+                    <td>${s.event_name}</td>
+                    <td>${s.agent_name || '—'}</td>
+                    <td style="font-size:12px;color:var(--adm-text-muted);white-space:nowrap">${dateStr}</td>
+                </tr>`;
+            }).join('')}</tbody>
+        </table>`
+        : '<p style="padding:16px;color:var(--adm-text-muted)">Aucun scan</p>';
 }
 
 export async function stopPointagePolling() {
