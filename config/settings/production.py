@@ -29,6 +29,8 @@ if not _cloudinary_configured():
 
 # --- HTTPS & cookies ---
 SECURE_SSL_REDIRECT = True
+# Ne pas rediriger le health check Render (probe HTTP interne → sinon 301 = Deploy Error)
+SECURE_REDIRECT_EXEMPT = [r"^health/?$"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
