@@ -588,6 +588,66 @@ body {
 .mb-agent-ev-meta { font-size: 12px; color: var(--mb-text-muted); line-height: 1.5; margin-bottom: 8px; }
 .mb-agent-ev-meta svg { width: 14px; height: 14px; vertical-align: -2px; }
 .mb-agent-ev-count { font-size: 13px; font-weight: 600; color: var(--mb-primary); margin: 0; }
+
+/* Détail événement — métadonnées premium */
+.mb-event-detail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.mb-event-detail-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    color: var(--mb-text);
+}
+.mb-event-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.mb-event-meta-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--mb-text-muted);
+}
+.mb-event-meta-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    flex-shrink: 0;
+    color: var(--mb-text-muted);
+    opacity: 0.9;
+}
+.mb-event-meta-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.75;
+    display: block;
+}
+.mb-event-meta-text {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+.mb-event-detail-desc {
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 16px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--mb-border);
+    color: var(--mb-text);
+}
 .mb-agent-ev-badge {
     font-size: 10px;
     font-weight: 700;

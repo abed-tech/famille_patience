@@ -1,4 +1,4 @@
-const CACHE_NAME = 'famille-patience-v10';
+const CACHE_NAME = 'famille-patience-v11';
 const STATIC_ASSETS = [
     '/static/css/fp-system.css',
     '/static/css/fp-responsive.css',

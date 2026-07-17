@@ -146,16 +146,24 @@ export async function renderEvents(router) {
 }
 
 function eventInfoBlock(ev) {
+    const dateTime = `${formatDate(ev.date)}${ev.time ? ` · ${formatTime(ev.time)}` : ''}`;
     return `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-            <h2 style="font-size:16px;font-weight:700;margin:0">${ev.name}</h2>
+        <div class="mb-event-detail-head">
+            <h2 class="mb-event-detail-title">${ev.name}</h2>
             ${statusBadge(ev.status)}
         </div>
-        <p style="font-size:13px;color:var(--mb-text-muted);line-height:1.5;margin-bottom:8px">
-            ${icons.calendar} ${formatDate(ev.date)}${ev.time ? ` · ${formatTime(ev.time)}` : ''}<br>
-            ${ev.location ? `${icons.mapPin} ${ev.location}<br>` : ''}
-        </p>
-        ${ev.description ? `<p style="font-size:13px;line-height:1.55;margin:0;color:var(--mb-text)">${ev.description}</p>` : ''}`;
+        <div class="mb-event-meta">
+            <div class="mb-event-meta-item">
+                <span class="mb-event-meta-icon" aria-hidden="true">${icons.calendar}</span>
+                <span class="mb-event-meta-text">${dateTime}</span>
+            </div>
+            ${ev.location ? `
+            <div class="mb-event-meta-item">
+                <span class="mb-event-meta-icon" aria-hidden="true">${icons.mapPin}</span>
+                <span class="mb-event-meta-text">${ev.location}</span>
+            </div>` : ''}
+        </div>
+        ${ev.description ? `<p class="mb-event-detail-desc">${ev.description}</p>` : ''}`;
 }
 
 function attendancesBlock(attendances) {

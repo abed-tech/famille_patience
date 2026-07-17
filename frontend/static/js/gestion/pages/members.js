@@ -38,7 +38,7 @@ function memberListItem(m) {
             </div>
             <div class="adm-member-row-right">
                 ${statusBadge(m.status)}
-                ${icons.chevron}
+                <span class="adm-member-chevron" aria-hidden="true">${icons.chevron}</span>
             </div>
         </button>`;
 }
