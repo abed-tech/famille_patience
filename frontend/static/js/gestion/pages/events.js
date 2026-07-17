@@ -15,7 +15,7 @@ export async function renderEvents() {
     renderShell('events', `
         <div class="adm-page-header">
             <div><h2>Événements</h2><p>${events.length} événement(s)</p></div>
-            <button class="adm-btn adm-btn-primary" id="btn-create">${icons.plus} Créer</button>
+            <button class="adm-btn adm-btn-primary adm-btn-header" id="btn-create">${icons.plus} Créer</button>
         </div>
         <div class="adm-grid-2">
             ${events.map(e => {

@@ -119,6 +119,15 @@ table {
     max-width: 100%;
 }
 
+/* En-tête listes admin : boutons Ajouter / Créer compacts (pas pleine largeur) */
+.adm-btn.adm-btn-header {
+    min-height: 42px;
+    height: 42px;
+    width: auto;
+    max-width: max-content;
+    font-size: 14px;
+}
+
 input, select, textarea, button {
     max-width: 100%;
     font-size: 16px; /* évite le zoom iOS sur focus */
@@ -352,6 +361,14 @@ input, select, textarea, button {
     }
     .adm-page-header .adm-btn {
         width: 100%;
+    }
+    /* Garder Ajouter / Créer compacts (largeur au contenu) */
+    .adm-page-header .adm-btn-header {
+        width: auto;
+        max-width: max-content;
+        min-height: 42px;
+        height: 42px;
+        font-size: 14px;
     }
     .adm-stats-grid {
         grid-template-columns: 1fr !important;

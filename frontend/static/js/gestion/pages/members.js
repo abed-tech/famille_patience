@@ -62,7 +62,7 @@ export async function renderMembers() {
     renderShell('members', `
         <div class="adm-page-header">
             <div><h2>Membres</h2><p>${filtered.length} membre(s) enregistré(s)</p></div>
-            <button class="adm-btn adm-btn-primary" id="btn-add">${icons.plus} Nouveau membre</button>
+            <button class="adm-btn adm-btn-primary adm-btn-header" id="btn-add">${icons.plus} Nouveau membre</button>
         </div>
         <div class="adm-filters">
             <input class="adm-input" style="max-width:280px" id="search-input" placeholder="Rechercher..." value="${search}">

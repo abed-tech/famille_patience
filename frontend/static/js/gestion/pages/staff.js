@@ -94,7 +94,7 @@ export async function renderReferrers() {
     renderShell('referrers', `
         <div class="adm-page-header">
             <div><h2>Référents</h2><p>${referrers.length} référent(s)</p></div>
-            <button class="adm-btn adm-btn-primary" id="btn-add-referrer">${icons.plus} Ajouter</button>
+            <button class="adm-btn adm-btn-primary adm-btn-header" id="btn-add-referrer">${icons.plus} Ajouter</button>
         </div>
         <div class="adm-staff-grid">
             ${referrers.length ? referrers.map(r => `
@@ -127,7 +127,7 @@ export async function renderCounsellors() {
     renderShell('counsellors', `
         <div class="adm-page-header">
             <div><h2>Conseillers</h2><p>${counsellors.length} conseiller(s)</p></div>
-            <button class="adm-btn adm-btn-primary" id="btn-add-counsellor">${icons.plus} Ajouter</button>
+            <button class="adm-btn adm-btn-primary adm-btn-header" id="btn-add-counsellor">${icons.plus} Ajouter</button>
         </div>
         <div class="adm-staff-grid">
             ${counsellors.length ? counsellors.map(c => `
