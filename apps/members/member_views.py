@@ -326,8 +326,7 @@ class PublicChurchDepartmentListView(APIResponseMixin, generics.ListAPIView):
     def get_queryset(self):
         from .seed_catalog import ensure_registration_catalog
 
-        if not ChurchDepartment.objects.filter(is_active=True).exists():
-            ensure_registration_catalog()
+        ensure_registration_catalog()
         qs = ChurchDepartment.objects.filter(is_active=True).select_related("pole")
         pole = self.request.query_params.get("pole")
         if pole:

@@ -204,6 +204,9 @@ class ChurchDepartmentListCreateView(APIResponseMixin, generics.ListCreateAPIVie
     filterset_fields = ["pole"]
 
     def get_queryset(self):
+        from .seed_catalog import ensure_registration_catalog
+
+        ensure_registration_catalog()
         qs = ChurchDepartment.objects.select_related("pole")
         if self.request.user.is_authenticated and self.request.user.role == "admin":
             return qs.order_by("pole__name", "name")
