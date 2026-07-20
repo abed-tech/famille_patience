@@ -16,10 +16,29 @@ FAMILY_POLES = [
 ]
 
 CHURCH_DEPARTMENTS = [
-    "Ministère de l'Évangélisation",
-    "Ministère de Louange et Adorations",
-    "Ministère de la Communication et Audiovisuel",
-    "Ministère de la Formation",
+    "Intendance",
+    "Ministère de Louange et Adoration",
+    "Couple et Famille",
+    "Intégration",
+    "MDE",
+    "MDDS",
+    "MFI",
+    "MH2I",
+    "EJP",
+    "AEF",
+    "MJI",
+    "Protocole",
+    "Accueil",
+    "Sécurité",
+    "Nettoyage",
+    "Communication",
+    "Audiovisuel",
+    "Secrétariat Général",
+    "MDP",
+    "Social",
+    "Impact Santé",
+    "Librairie",
+    "Formation",
 ]
 
 

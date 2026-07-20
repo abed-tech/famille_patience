@@ -78,10 +78,29 @@ class Command(BaseCommand):
         from apps.members.models import ChurchDepartment
 
         departments = [
-            "Ministère de l'Évangélisation",
+            "Intendance",
             "Ministère de Louange et Adoration",
-            "Ministère de la Communication et Audiovisuel",
-            "Ministère de la Formation",
+            "Couple et Famille",
+            "Intégration",
+            "MDE",
+            "MDDS",
+            "MFI",
+            "MH2I",
+            "EJP",
+            "AEF",
+            "MJI",
+            "Protocole",
+            "Accueil",
+            "Sécurité",
+            "Nettoyage",
+            "Communication",
+            "Audiovisuel",
+            "Secrétariat Général",
+            "MDP",
+            "Social",
+            "Impact Santé",
+            "Librairie",
+            "Formation",
         ]
         for name in departments:
             ChurchDepartment.objects.get_or_create(name=name, pole=church_pole, defaults={"description": name})
