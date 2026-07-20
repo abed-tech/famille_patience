@@ -51,8 +51,8 @@ class MemberListCreateView(MemberQuerysetMixin, APIResponseMixin, generics.ListC
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status", "gender", "church_pole", "family_pole", "referrer", "counsellor"]
     search_fields = ["first_name", "last_name", "member_number", "phone_primary", "email"]
-    ordering_fields = ["last_name", "registration_date", "created_at"]
-    ordering = ["last_name"]
+    ordering_fields = ["last_name", "first_name", "registration_date", "created_at"]
+    ordering = ["last_name", "first_name"]
 
     def get_permissions(self):
         if self.request.method == "POST":
@@ -198,6 +198,34 @@ class ChurchPoleListCreateView(APIResponseMixin, generics.ListCreateAPIView):
         return self.created_response(ChurchPoleSerializer(instance).data, "Pôle église créé.")
 
 
+class ChurchPoleDetailView(APIResponseMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = ChurchPole.objects.all()
+    serializer_class = ChurchPoleSerializer
+    permission_classes = [IsAdmin]
+    lookup_field = "pk"
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return self.success_response(ChurchPoleSerializer(instance).data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return self.success_response(ChurchPoleSerializer(instance).data, "Pôle église mis à jour.")
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.members.exists() or instance.departments.exists():
+            instance.is_active = False
+            instance.save(update_fields=["is_active"])
+            return self.success_response(message="Pôle église désactivé (éléments associés).")
+        instance.delete()
+        return self.success_response(message="Pôle église supprimé.")
+
+
 class ChurchDepartmentListCreateView(APIResponseMixin, generics.ListCreateAPIView):
     serializer_class = ChurchDepartmentSerializer
     permission_classes = [IsAuthenticated]
@@ -209,8 +237,8 @@ class ChurchDepartmentListCreateView(APIResponseMixin, generics.ListCreateAPIVie
         ensure_registration_catalog()
         qs = ChurchDepartment.objects.select_related("pole")
         if self.request.user.is_authenticated and self.request.user.role == "admin":
-            return qs.order_by("pole__name", "name")
-        return qs.filter(is_active=True).order_by("pole__name", "name")
+            return qs.order_by("name")
+        return qs.filter(is_active=True).order_by("name")
 
     def get_permissions(self):
         if self.request.method == "POST":

@@ -141,7 +141,7 @@ export class AdminApi {
     getMembers(q = '') {
         const sep = q && !q.startsWith('?') ? '?' : '';
         const extra = q ? `${sep}${q.replace(/^\?/, '')}&` : '?';
-        return this.req(`/members/${extra}page_size=500`);
+        return this.req(`/members/${extra}ordering=last_name,first_name&page_size=500`);
     }
     getMember(id) { return this.req(`/members/${id}/`); }
     getMemberCard(id) { return this.req(`/members/${id}/card/`); }
@@ -286,6 +286,9 @@ export class AdminApi {
     closeEvent(id) { return this.req(`/events/${id}/close/`, { method: 'POST' }); }
     getPoles() { return this.req('/members/poles/family/'); }
     getChurchPoles() { return this.req('/members/poles/church/'); }
+    createChurchPole(d) { return this.req('/members/poles/church/', { method: 'POST', body: JSON.stringify(d) }); }
+    updateChurchPole(id, d) { return this.req(`/members/poles/church/${id}/`, { method: 'PATCH', body: JSON.stringify(d) }); }
+    deleteChurchPole(id) { return this.req(`/members/poles/church/${id}/`, { method: 'DELETE' }); }
     getDepartments() { return this.req('/members/departments/church/'); }
     getProfessions() { return this.req('/members/professions/'); }
     createPole(d) { return this.req('/members/poles/family/', { method: 'POST', body: JSON.stringify(d) }); }

@@ -6,6 +6,12 @@ import { router } from '../app.js';
 
 let membersCache = [];
 
+function sortMembersAlpha(items) {
+    return [...items].sort((a, b) =>
+        (a.full_name || `${a.last_name || ''} ${a.first_name || ''}`.trim())
+            .localeCompare(b.full_name || `${b.last_name || ''} ${b.first_name || ''}`.trim(), 'fr', { sensitivity: 'base' }));
+}
+
 function absUrl(url) {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -49,7 +55,7 @@ export async function renderMembers() {
     sessionStorage.removeItem('adm_search');
 
     try {
-        membersCache = list(await api.getMembers());
+        membersCache = sortMembersAlpha(list(await api.getMembers()));
     } catch (e) {
         membersCache = [];
         toast(e.message || 'Impossible de charger les membres');

@@ -289,12 +289,26 @@ export async function renderPoles() {
 
 export async function renderDepartments() {
     let churchPoles = [];
-    try { churchPoles = list(await api.getChurchPoles()); } catch { /* */ }
+    const loadChurchPoles = async () => {
+        try {
+            churchPoles = list(await api.getChurchPoles());
+        } catch (e) {
+            toast(e.message || 'Impossible de charger les pôles église');
+            churchPoles = [];
+        }
+    };
+    await loadChurchPoles();
+
+    const poleOptions = (item) => `
+        <option value="">Choisir</option>
+        ${churchPoles.map(p => `<option value="${p.id}" ${String(item?.pole) === String(p.id) ? 'selected' : ''}>${p.name}</option>`).join('')}`;
 
     await renderReferenceCrud({
         pageId: 'departments',
         title: 'Départements (ministères)',
         entityLabel: 'département',
+        sortKey: 'name',
+        headerButtonClass: 'adm-btn-header',
         columns: [
             { key: 'name', label: 'Nom' },
             { key: 'pole_name', label: 'Pôle église', muted: true },
@@ -304,14 +318,13 @@ export async function renderDepartments() {
         create: (d) => api.createDepartment(d),
         update: (id, d) => api.updateDepartment(id, d),
         remove: (id) => api.deleteDepartment(id),
+        onBeforeForm: loadChurchPoles,
         formFields: (item) => `
             <div class="adm-form-group"><label class="adm-label">Nom *</label>
                 <input class="adm-input" name="name" value="${item?.name || ''}" required></div>
             <div class="adm-form-group"><label class="adm-label">Pôle église *</label>
-                <select class="adm-input" name="pole" required>
-                    <option value="">Choisir</option>
-                    ${churchPoles.map(p => `<option value="${p.id}" ${String(item?.pole) === String(p.id) ? 'selected' : ''}>${p.name}</option>`).join('')}
-                </select></div>
+                <select class="adm-input" name="pole" required>${poleOptions(item)}</select>
+                <button type="button" class="adm-btn adm-btn-secondary adm-btn-sm" id="add-church-pole" style="margin-top:8px">+ Nouveau pôle église</button></div>
             <div class="adm-form-group"><label class="adm-label">Description</label>
                 <textarea class="adm-input" name="description" rows="2">${item?.description || ''}</textarea></div>
             <div class="adm-form-group"><label class="adm-label">Actif</label>
@@ -319,6 +332,23 @@ export async function renderDepartments() {
                     <option value="true" ${item?.is_active !== false ? 'selected' : ''}>Actif</option>
                     <option value="false" ${item?.is_active === false ? 'selected' : ''}>Inactif</option>
                 </select></div>`,
+        afterFormRender: (overlay) => {
+            overlay.querySelector('#add-church-pole')?.addEventListener('click', async () => {
+                const name = window.prompt('Nom du pôle église');
+                if (!name?.trim()) return;
+                try {
+                    const res = await api.createChurchPole({ name: name.trim(), description: name.trim(), is_active: true });
+                    const pole = res.data || res;
+                    churchPoles.push(pole);
+                    const sel = overlay.querySelector('[name=pole]');
+                    sel.innerHTML = poleOptions(null);
+                    sel.value = String(pole.id);
+                    toast('Pôle église créé');
+                } catch (e) {
+                    toast(e.message || 'Impossible de créer le pôle');
+                }
+            });
+        },
         parseForm: (fd) => ({
             name: fd.get('name'),
             pole: Number(fd.get('pole')),
@@ -358,8 +388,15 @@ export async function renderProfessions() {
 
 async function renderReferenceCrud(cfg) {
     if (!api.token) return;
+
+    const sortItems = (rows) => {
+        if (!cfg.sortKey) return rows;
+        return [...rows].sort((a, b) =>
+            String(a[cfg.sortKey] || '').localeCompare(String(b[cfg.sortKey] || ''), 'fr', { sensitivity: 'base' }));
+    };
+
     let items = [];
-    try { items = list(await cfg.load()); } catch (e) {
+    try { items = sortItems(list(await cfg.load())); } catch (e) {
         toast(e.message || 'Impossible de charger les données');
     }
 
@@ -383,7 +420,7 @@ async function renderReferenceCrud(cfg) {
     renderShell(cfg.pageId, `
         <div class="adm-page-header">
             <div><h2>${cfg.title}</h2><p>${items.length} élément(s)</p></div>
-            <button class="adm-btn adm-btn-primary" id="ref-create">Nouveau ${cfg.entityLabel}</button>
+            <button class="adm-btn adm-btn-primary ${cfg.headerButtonClass || ''}" id="ref-create">Nouveau ${cfg.entityLabel}</button>
         </div>
         <div class="adm-card">
             <div class="adm-table-wrap">
@@ -398,19 +435,21 @@ async function renderReferenceCrud(cfg) {
         </div>`);
 
     const refresh = async () => {
-        items = list(await cfg.load());
+        items = sortItems(list(await cfg.load()));
         const tbody = document.querySelector('#ref-table tbody');
         if (tbody) tbody.innerHTML = renderTable() || `<tr><td colspan="${cfg.columns.length + 1}">${emptyState('Aucun élément')}</td></tr>`;
         bindActions();
     };
 
-    const openForm = (item = null) => {
+    const openForm = async (item = null) => {
+        if (cfg.onBeforeForm) await cfg.onBeforeForm(item);
         const overlay = modal(
             item ? `Modifier le ${cfg.entityLabel}` : `Nouveau ${cfg.entityLabel}`,
             `<form id="ref-form">${cfg.formFields(item)}</form>`,
             `<button class="adm-btn adm-btn-secondary adm-modal-cancel">Annuler</button>
              <button class="adm-btn adm-btn-primary" id="ref-save">${item ? 'Enregistrer' : 'Créer'}</button>`
         );
+        cfg.afterFormRender?.(overlay, item);
         overlay.querySelector('.adm-modal-cancel').onclick = () => overlay.remove();
         overlay.querySelector('#ref-save').onclick = async () => {
             const fd = new FormData(overlay.querySelector('#ref-form'));
